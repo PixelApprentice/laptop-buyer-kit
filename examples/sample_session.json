@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "inspection": {
+    "id": "SYNTHETIC-DEMO-001",
+    "collected_at": "2026-10-25T10:00:00Z",
+    "operator_notes": "Synthetic fixture only; no real laptop data."
+  },
+  "system": {
+    "platform": "linux-live",
+    "manufacturer": "Example Vendor",
+    "model": "Example Laptop 14"
+  },
+  "claims": {
+    "ram_gib": 16,
+    "storage_capacity_gb": 512
+  },
+  "battery": {
+    "design_capacity_mwh": 60000,
+    "full_charge_capacity_mwh": 43200,
+    "cycle_count": 30,
+    "source": "synthetic fixture"
+  },
+  "storage": {
+    "devices": [
+      {
+        "model": "Example NVMe 512 GB",
+        "protocol": "nvme",
+        "nvme_percentage_used": 8,
+        "nvme_critical_warning": 0,
+        "media_errors": 14,
+        "power_on_hours": 12000,
+        "capacity_bytes": 512110190592,
+        "self_test_status": "not_run",
+        "source": "synthetic fixture"
+      }
+    ]
+  },
+  "memory": {
+    "total_bytes": 17179869184,
+    "source": "synthetic fixture"
+  }
+}

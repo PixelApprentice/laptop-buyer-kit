@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.coverage
+htmlcov/
+report.html
+report.json
+reports/
+*.sqlite3
+.env
+.DS_Store
+Thumbs.db
+# Never commit real device reports, raw dumps, serials, or personally identifying data.
+real-device-data/
