@@ -1,4 +1,4 @@
-"""Command-line entry point for offline snapshot analysis."""
+"""Command-line entry point for Laptop Buyer Kit."""
 from __future__ import annotations
 
 import argparse
@@ -8,20 +8,51 @@ from pathlib import Path
 
 from .analysis import analyze_snapshot
 from .report import to_html, to_json
+from .web.server import run_server
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Analyze a normalized laptop inspection snapshot (no live hardware access).")
-    parser.add_argument("snapshot", type=Path, help="Input snapshot JSON")
-    parser.add_argument("--format", choices=("json", "html"), default="json", help="Report format (default: json)")
-    parser.add_argument("--output", type=Path, help="Output file; defaults to stdout")
+    parser = argparse.ArgumentParser(
+        prog="laptop-inspector",
+        description="Offline-first laptop hardware diagnostics, discrepancy detection, and buyer assurance.",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand", help="Sub-commands")
+
+    # Serve command: local web dashboard
+    serve_parser = subparsers.add_parser("serve", help="Launch local offline web dashboard & REST server")
+    serve_parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind (default: 127.0.0.1)")
+    serve_parser.add_argument("--port", type=int, default=8080, help="Port to listen on (default: 8080)")
+
+    # Analyze command
+    analyze_parser = subparsers.add_parser("analyze", help="Analyze a normalized snapshot JSON file")
+    analyze_parser.add_argument("snapshot", type=Path, help="Input snapshot JSON file")
+    analyze_parser.add_argument("--format", choices=("json", "html"), default="json", help="Report format (default: json)")
+    analyze_parser.add_argument("--output", type=Path, help="Output file; defaults to stdout")
+
+    # For backwards compatibility with `laptop-inspector <snapshot>`
+    parser.add_argument("legacy_snapshot", nargs="?", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument("--format", choices=("json", "html"), default="json", help=argparse.SUPPRESS)
+    parser.add_argument("--output", type=Path, help=argparse.SUPPRESS)
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.subcommand == "serve":
+        run_server(host=args.host, port=args.port)
+        return 0
+
+    snapshot_path = getattr(args, "snapshot", None) or args.legacy_snapshot
+    if not snapshot_path:
+        # Default to launching dashboard if no arguments provided
+        print("No snapshot specified. Starting interactive local dashboard...")
+        run_server(host="127.0.0.1", port=8080)
+        return 0
+
     try:
-        with args.snapshot.open("r", encoding="utf-8") as handle:
+        with snapshot_path.open("r", encoding="utf-8") as handle:
             snapshot = json.load(handle)
         if not isinstance(snapshot, dict):
             raise ValueError("Top-level JSON value must be an object")
@@ -34,11 +65,15 @@ def main(argv: list[str] | None = None) -> int:
     except (TypeError, ValueError, AttributeError) as exc:
         print(f"error: snapshot structure is invalid: {exc}", file=sys.stderr)
         return 2
-    output = to_html(report) if args.format == "html" else to_json(report)
-    if args.output:
+
+    report_format = getattr(args, "format", "json")
+    output = to_html(report) if report_format == "html" else to_json(report)
+    output_path = getattr(args, "output", None)
+
+    if output_path:
         try:
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(output, encoding="utf-8")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(output, encoding="utf-8")
         except OSError as exc:
             print(f"error: unable to write report: {exc}", file=sys.stderr)
             return 2

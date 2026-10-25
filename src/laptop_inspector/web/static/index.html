@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laptop Buyer Kit — Offline Hardware Assurance</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation Header -->
+    <header class="navbar">
+      <div class="nav-container">
+        <div class="brand">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-title">Laptop Buyer Kit</span>
+            <span class="brand-tag">v1.0.0 · Offline First</span>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" role="tablist">
+          <button class="nav-btn active" data-tab="tab-inspect" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Inspect
+          </button>
+          <button class="nav-btn" data-tab="tab-screentest" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/></svg>
+            Screen Test
+          </button>
+          <button class="nav-btn" data-tab="tab-keyboardtest" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+            Keyboard Test
+          </button>
+          <button class="nav-btn" data-tab="tab-history" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            History
+          </button>
+          <button class="nav-btn" data-tab="tab-about" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            About & Donate
+          </button>
+        </nav>
+
+        <div class="nav-actions">
+          <span class="badge status-passed" title="Zero network requests made">100% LOCAL</span>
+          <button id="themeToggleBtn" class="btn btn-icon" title="Toggle Theme">🌓</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- TAB 1: INSPECTION -->
+      <section id="tab-inspect" class="tab-pane active" role="tabpanel">
+        <div class="grid grid-sidebar">
+          <!-- Left Column: Controls & Claims -->
+          <div class="sidebar-card">
+            <h2>Seller Claims & Setup</h2>
+            <p class="text-muted">Enter listing specifications to automatically detect discrepancies.</p>
+            
+            <form id="claimsForm" class="claims-form">
+              <div class="form-group">
+                <label for="claimModel">Advertised Model</label>
+                <input type="text" id="claimModel" placeholder="e.g. ThinkPad T14 Gen 3" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="claimRam">RAM (GiB)</label>
+                  <input type="number" id="claimRam" placeholder="16" step="1" min="1" />
+                </div>
+                <div class="form-group">
+                  <label for="claimStorage">Storage (GB)</label>
+                  <input type="number" id="claimStorage" placeholder="512" step="1" min="1" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="claimCpu">CPU Specification</label>
+                <input type="text" id="claimCpu" placeholder="e.g. Ryzen 7 PRO 6850U" />
+              </div>
+
+              <div class="form-group">
+                <label for="claimGpu">GPU Model</label>
+                <input type="text" id="claimGpu" placeholder="e.g. Radeon 680M" />
+              </div>
+
+              <div class="form-group">
+                <label for="operatorNotes">Inspection Notes</label>
+                <textarea id="operatorNotes" rows="2" placeholder="e.g. Marketplace deal, tested at seller cafe"></textarea>
+              </div>
+
+              <div class="action-buttons">
+                <button type="button" id="runLiveBtn" class="btn btn-primary btn-block">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Run Live Inspection
+                </button>
+                <button type="button" id="loadSampleBtn" class="btn btn-secondary btn-block">
+                  Load Synthetic Sample
+                </button>
+                <button type="button" id="uploadSnapshotBtn" class="btn btn-outline btn-block">
+                  Upload Snapshot JSON
+                </button>
+                <input type="file" id="snapshotFileInput" accept=".json" style="display:none;" />
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Results & Analysis -->
+          <div class="content-panel">
+            <div id="emptyState" class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <h3>No Inspection Active</h3>
+              <p>Click <strong>Run Live Inspection</strong> to query local hardware or <strong>Load Synthetic Sample</strong> to evaluate sample inspection data.</p>
+            </div>
+
+            <div id="sessionResults" class="session-results" style="display:none;">
+              <!-- Verdict Banner -->
+              <div id="verdictBanner" class="verdict-banner">
+                <div class="verdict-header">
+                  <span class="verdict-label">OVERALL VERDICT</span>
+                  <span id="verdictBadge" class="badge">ANALYZING</span>
+                </div>
+                <h2 id="verdictTitle">Checking hardware state...</h2>
+                <p id="verdictSummary"></p>
+                <div class="verdict-meta">
+                  <span id="sessionMetaId">Session: -</span>
+                  <span id="sessionMetaDate">Collected: -</span>
+                  <span id="sessionMetaModel">Model: -</span>
+                </div>
+                <div class="export-bar">
+                  <a id="exportHtmlBtn" class="btn btn-sm btn-outline" target="_blank">Download HTML Report</a>
+                  <a id="exportJsonBtn" class="btn btn-sm btn-outline" target="_blank">Download JSON</a>
+                  <button type="button" id="printReportBtn" class="btn btn-sm btn-outline">Print View</button>
+                </div>
+              </div>
+
+              <!-- Sub-tabs within session results -->
+              <div class="subnav-tabs">
+                <button class="subnav-btn active" data-subtab="subtab-findings">
+                  Findings (<span id="findingsCountBadge">0</span>)
+                </button>
+                <button class="subnav-btn" data-subtab="subtab-coverage">
+                  Test Coverage Matrix
+                </button>
+                <button class="subnav-btn" data-subtab="subtab-manual">
+                  Manual Physical Checklist
+                </button>
+                <button class="subnav-btn" data-subtab="subtab-raw">
+                  Raw Inventory Data
+                </button>
+              </div>
+
+              <!-- Subtab 1: Findings -->
+              <div id="subtab-findings" class="subtab-pane active">
+                <div id="findingsList" class="findings-list"></div>
+              </div>
+
+              <!-- Subtab 2: Coverage Matrix -->
+              <div id="subtab-coverage" class="subtab-pane">
+                <table class="table coverage-table">
+                  <thead>
+                    <tr>
+                      <th>Diagnostic Area</th>
+                      <th>Coverage State</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody id="coverageTableBody"></tbody>
+                </table>
+              </div>
+
+              <!-- Subtab 3: Manual Physical Checklist -->
+              <div id="subtab-manual" class="subtab-pane">
+                <div class="card-box">
+                  <h3>Physical & Peripheral Verification</h3>
+                  <p class="text-muted">Software cannot inspect physical damage, hinges, missing screws, or battery swelling. Test and record results below:</p>
+
+                  <div id="manualChecklist" class="checklist-grid"></div>
+                </div>
+              </div>
+
+              <!-- Subtab 4: Raw Snapshot Data -->
+              <div id="subtab-raw" class="subtab-pane">
+                <pre id="rawSnapshotJson" class="code-block"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SCREEN TEST -->
+      <section id="tab-screentest" class="tab-pane" role="tabpanel">
+        <div class="tool-card">
+          <h2>Dead & Stuck Pixel Screen Tester</h2>
+          <p class="text-muted">Launches an immersive full-screen display cycling pure RGB and monochrome panels to spot dead pixels, stuck subpixels, and backlight bleeding.</p>
+          
+          <div class="screen-instructions">
+            <div class="step-badge">1</div>
+            <div>Click <strong>Start Fullscreen Pixel Test</strong> below.</div>
+            <div class="step-badge">2</div>
+            <div>Click anywhere or press <strong>Spacebar</strong> to cycle through colors: <em>Black, White, Red, Green, Blue, Yellow, Magenta, Cyan</em>.</div>
+            <div class="step-badge">3</div>
+            <div>Press <strong>ESC</strong> at any time to exit the test.</div>
+          </div>
+
+          <div class="palette-preview">
+            <span class="preview-chip" style="background:#000;"></span>
+            <span class="preview-chip" style="background:#fff; border: 1px solid #ccc;"></span>
+            <span class="preview-chip" style="background:#f00;"></span>
+            <span class="preview-chip" style="background:#0f0;"></span>
+            <span class="preview-chip" style="background:#00f;"></span>
+            <span class="preview-chip" style="background:#ff0;"></span>
+            <span class="preview-chip" style="background:#f0f;"></span>
+            <span class="preview-chip" style="background:#0ff;"></span>
+          </div>
+
+          <button type="button" id="launchScreenTestBtn" class="btn btn-primary btn-lg">
+            Start Fullscreen Pixel Test
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 3: KEYBOARD TEST -->
+      <section id="tab-keyboardtest" class="tab-pane" role="tabpanel">
+        <div class="tool-card">
+          <div class="kb-header">
+            <div>
+              <h2>Interactive Laptop Keyboard Tester</h2>
+              <p class="text-muted">Press any key on the laptop. Working keys illuminate green and stay recorded.</p>
+            </div>
+            <div class="kb-stats">
+              <span class="stat-num" id="kbVerifiedCount">0</span>
+              <span class="stat-label">Keys Tested</span>
+              <button type="button" id="kbResetBtn" class="btn btn-sm btn-outline">Reset Matrix</button>
+            </div>
+          </div>
+
+          <div id="lastKeyPressed" class="key-monitor">Press any key to begin verification...</div>
+
+          <!-- Virtual Keyboard Visualizer -->
+          <div class="keyboard-wrapper">
+            <div id="virtualKeyboard" class="keyboard"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: HISTORY -->
+      <section id="tab-history" class="tab-pane" role="tabpanel">
+        <div class="card-box">
+          <div class="card-header-row">
+            <h2>Inspection History</h2>
+            <button type="button" id="refreshHistoryBtn" class="btn btn-sm btn-outline">Refresh</button>
+          </div>
+          <p class="text-muted">Historical diagnostic sessions stored in local SQLite database.</p>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Session ID</th>
+                <th>System Model</th>
+                <th>Risk State</th>
+                <th>Findings</th>
+                <th>Operator Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 5: ABOUT & DONATE -->
+      <section id="tab-about" class="tab-pane" role="tabpanel">
+        <div class="about-grid">
+          <div class="card-box">
+            <h2>About Laptop Buyer Kit</h2>
+            <p><strong>Laptop Buyer Kit</strong> is an offline-first, open-source laptop diagnostics platform built for used hardware buyers, refurbishers, and technicians.</p>
+            
+            <h3>Core Engineering Principles</h3>
+            <ul class="feature-list">
+              <li><strong>Offline by Default:</strong> Zero telemetry, zero uploads, zero remote script tracking. Everything evaluates on your machine.</li>
+              <li><strong>Transparent Uncertainty:</strong> Missing or unsupported metrics are never converted into a fake "100% Pass".</li>
+              <li><strong>Discrepancy Investigation:</strong> Non-destructive discrepancy detection without automatic accusations of fraud.</li>
+              <li><strong>Safe Buyer Mode:</strong> Read-only inspection; no destructive wipes, partition edits, or unapproved firmware modifications.</li>
+            </ul>
+
+            <h3>Developer & Architecture</h3>
+            <p>Authored by <strong>PixelApprentice</strong>. Built with a pure Python analysis core, SQLite local storage, and responsive web interface.</p>
+            <p>Repository: <a href="https://github.com/PixelApprentice/laptop-buyer-kit" target="_blank" rel="noopener">github.com/PixelApprentice/laptop-buyer-kit</a></p>
+            <p>License: <strong>MIT License</strong></p>
+          </div>
+
+          <div class="card-box donate-card">
+            <h2>Support & Donate</h2>
+            <p>Laptop Buyer Kit is completely free and open source. If this tool helped you avoid buying a damaged or counterfeit laptop, consider supporting development:</p>
+
+            <div class="donate-options">
+              <a href="https://github.com/sponsors/PixelApprentice" target="_blank" rel="noopener" class="donate-btn sponsor-github">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                GitHub Sponsors
+              </a>
+
+              <a href="https://ko-fi.com/PixelApprentice" target="_blank" rel="noopener" class="donate-btn sponsor-kofi">
+                ☕ Support on Ko-fi
+              </a>
+
+              <a href="https://buymeacoffee.com/PixelApprentice" target="_blank" rel="noopener" class="donate-btn sponsor-bmac">
+                ⚡ Buy Me a Coffee
+              </a>
+            </div>
+
+            <div class="crypto-box">
+              <h4>Crypto Support</h4>
+              <div class="crypto-entry">
+                <span>Bitcoin (BTC):</span>
+                <code>bc1qpixelapprenticeusedlaptopkitbtc89x</code>
+              </div>
+              <div class="crypto-entry">
+                <span>Ethereum (ETH):</span>
+                <code>0xPixelApprenticeLaptopBuyerKitEth77a</code>
+              </div>
+              <div class="crypto-entry">
+                <span>Monero (XMR):</span>
+                <code>888tXMRPixelApprenticePrivateLaptopFund99x</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Fullscreen Screen Tester Overlay -->
+    <div id="screenTestOverlay" class="screen-test-overlay" style="display:none;">
+      <div id="screenTestHelp" class="screen-test-help">
+        Click or press Space to change color. Press ESC to exit.
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
