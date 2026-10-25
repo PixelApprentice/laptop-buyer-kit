@@ -1,3 +1,3 @@
-"""Laptop Buyer Kit: an evidence-based diagnostic analysis prototype."""
+"""Laptop Buyer Kit: Offline-first laptop hardware diagnostics and buyer assurance."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"

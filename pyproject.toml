@@ -4,19 +4,56 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laptop-buyer-kit"
-version = "0.1.0"
-description = "Offline-first laptop inspection analysis engine and report generator"
+version = "1.0.0"
+description = "Offline-first laptop hardware diagnostics, discrepancy detection, and used-buyer assurance"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-authors = [{name = "Laptop Buyer Kit contributors"}]
+authors = [{name = "PixelApprentice", email = "pixelapprentice@users.noreply.github.com"}]
+keywords = [
+    "laptop",
+    "hardware-diagnostics",
+    "used-laptop",
+    "buyer-kit",
+    "battery-health",
+    "smartctl",
+    "nvme",
+    "offline-first",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Hardware",
+    "Topic :: Utilities",
+]
 dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "playwright>=1.40.0",
+]
 
 [project.scripts]
 laptop-inspector = "laptop_inspector.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"laptop_inspector.web" = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

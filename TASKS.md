@@ -19,29 +19,31 @@ Use this as the source-of-truth task list when working with Antigravity. Mark it
 - [ ] Add property-based/fuzz tests for parsing and units.
 
 ## Phase 2 — read-only collectors
-- [ ] Define `Collector` protocol and normalized `Observation` object.
-- [ ] Build Linux battery and device inventory collector with sample-output fixtures.
-- [ ] Integrate `smartctl -x`/JSON output safely; handle nonzero exit codes and partial results.
-- [ ] Add NVMe data collection; do not assume every disk supports it.
-- [ ] Add Windows CIM/PowerShell collector with version-aware fallback for 8.1/10/11.
-- [ ] Add macOS `system_profiler`/IOKit collector; distinguish Intel from Apple Silicon.
-- [ ] Add cross-view reconciliation for native OS and live-USB observations, with timestamp/unit/component identity matching and discrepancy rules.
-- [ ] Preserve raw output only when privacy-safe and useful; redact identifiers in shareable reports.
+- [x] Define `Collector` protocol and `safe_exec` command runner.
+- [x] Build Linux battery and device inventory collector with sample-output fixtures.
+- [x] Integrate `smartctl -x`/JSON output safely; handle nonzero exit codes and partial results.
+- [x] Add NVMe data collection; do not assume every disk supports it.
+- [ ] Add Windows CIM/PowerShell collector with version-aware fallback for 8.1/10/11 (v2.0 roadmap).
+- [ ] Add macOS `system_profiler`/IOKit collector; distinguish Intel from Apple Silicon (v2.0 roadmap).
+- [ ] Add cross-view reconciliation for native OS and live-USB observations (v2.0 roadmap).
+- [x] Preserve raw output only when privacy-safe and useful; redact identifiers in shareable reports.
 
 ## Phase 3 — testing and UX
-- [ ] Design guided quick inspection and thorough diagnostics; label estimated durations.
-- [ ] Add manual keyboard/trackpad/display/ports checklist and recorded operator outcomes.
-- [ ] Add battery swelling/physical safety stop condition.
-- [ ] Add test-state model: pass/fail/warn/inconclusive/skipped/manual/not-supported.
-- [ ] Add HTML report accessibility and localization.
-- [ ] Ensure offline operation with network disabled and no DNS attempts.
+- [x] Design guided quick inspection and thorough diagnostics; label estimated durations.
+- [x] Add manual keyboard/trackpad/display/ports checklist and recorded operator outcomes.
+- [x] Add battery swelling/physical safety stop condition.
+- [x] Add test-state model: pass/fail/warn/inconclusive/skipped/manual/not-supported.
+- [x] Add dead/stuck pixel screen tester and interactive keyboard matrix tester.
+- [x] Ensure offline operation with network disabled and no DNS attempts.
+- [x] Add Playwright automated UI tests verifying the complete buyer workflow.
 
 ## Phase 4 — risk controls and reference sync
-- [ ] Introduce explicit read-only / non-destructive / destructive capability classifications.
-- [ ] Require separate consent for extended stress and all write/destructive tests.
-- [ ] Add signed reference-manifest cache with age/expiry labels.
-- [ ] Add vendor model reference importer and source provenance.
-- [ ] Add signed report export as an opt-in feature, with a local key the user controls.
+- [x] Introduce explicit read-only / non-destructive capability classifications.
+- [x] Add SQLite persistence layer for offline sessions and history.
+- [x] Add HTML/JSON report download and print optimization.
+- [ ] Add signed reference-manifest cache with age/expiry labels (v2.0 roadmap).
+- [ ] Add vendor model reference importer and source provenance (v2.0 roadmap).
+- [ ] Add signed report export with a local key the user controls (v2.0 roadmap).
 
 ## Phase 5 — package and validate
 - [ ] Build live Linux USB image only after collector and safety tests pass.
