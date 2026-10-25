@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 
 def _iso_now() -> str:
@@ -30,16 +31,21 @@ class Database:
 
         self._init_db()
 
-    def _get_connection(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connection(self) -> Generator[sqlite3.Connection, None, None]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
         if self.db_path != ":memory:":
             conn.execute("PRAGMA journal_mode = WAL;")
-        return conn
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             conn.executescript("""
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
@@ -116,7 +122,7 @@ class Database:
         system_model = system.get("model") or system.get("product_name")
         platform = system.get("platform") or system.get("os_name")
 
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO sessions (
@@ -196,7 +202,7 @@ class Database:
         return session_id
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             sess_row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
             if not sess_row:
                 return None
@@ -253,7 +259,7 @@ class Database:
             }
 
     def list_sessions(self, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             rows = conn.execute(
                 """
                 SELECT id, created_at, operator_notes, risk_state, finding_count, system_model, platform
@@ -273,7 +279,7 @@ class Database:
         notes: str | None = None,
     ) -> None:
         now = _iso_now()
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO manual_checks (
@@ -285,7 +291,7 @@ class Database:
             conn.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (now, session_id))
 
     def get_manual_checks(self, session_id: str) -> dict[str, dict[str, Any]]:
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             rows = conn.execute(
                 "SELECT check_name, status, notes, checked_at FROM manual_checks WHERE session_id = ?",
                 (session_id,),
@@ -300,6 +306,6 @@ class Database:
             }
 
     def delete_session(self, session_id: str) -> bool:
-        with self._get_connection() as conn:
+        with self._connection() as conn:
             cursor = conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
             return cursor.rowcount > 0
