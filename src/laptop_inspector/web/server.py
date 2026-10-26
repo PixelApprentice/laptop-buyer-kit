@@ -64,9 +64,18 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
             self._send_json({
                 "status": "healthy",
                 "application": "Laptop Buyer Kit",
-                "version": "1.0.0",
+                "version": "2.0.0",
                 "offline_mode": True,
             })
+            return
+
+        if path == "/api/probe":
+            try:
+                collector = LinuxCollector()
+                specs = collector.probe_host_specs()
+                self._send_json(specs)
+            except Exception as exc:
+                self._send_error_json(f"Hardware probe failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
         if path == "/api/sessions":

@@ -225,6 +225,208 @@ class LinuxCollector:
 
         return dev
 
+    def collect_cpu(self) -> dict[str, Any]:
+        """Collect CPU processor model, core count, thread count, and frequency."""
+        cpuinfo = self.proc / "cpuinfo"
+        model_name = "Unknown CPU"
+        cores = 1
+        threads = 0
+        freq_mhz = None
+
+        try:
+            if cpuinfo.is_file():
+                for line in cpuinfo.read_text(encoding="utf-8").splitlines():
+                    if ":" in line:
+                        k, v = [x.strip() for x in line.split(":", 1)]
+                        if k == "model name" and model_name == "Unknown CPU":
+                            model_name = v
+                        elif k == "processor":
+                            threads += 1
+                        elif k == "cpu cores" and cores == 1:
+                            try:
+                                cores = int(v)
+                            except ValueError:
+                                pass
+                        elif k == "cpu MHz" and freq_mhz is None:
+                            try:
+                                freq_mhz = round(float(v), 1)
+                            except ValueError:
+                                pass
+        except OSError:
+            pass
+
+        if threads == 0:
+            threads = os.cpu_count() or 1
+        if cores == 1 and threads > 1:
+            cores = threads
+
+        return {
+            "model": model_name,
+            "cores": cores,
+            "threads": threads,
+            "frequency_mhz": freq_mhz,
+            "architecture": platform.machine(),
+            "source": f"linux-proc:{cpuinfo}",
+        }
+
+    def collect_gpu(self) -> dict[str, Any]:
+        """Detect GPU / graphics controllers via DRM subsystem and lspci."""
+        gpu_name = "Integrated / System Graphics"
+        drm_dir = self.sysfs / "class" / "drm"
+
+        # Try lspci first for rich model name
+        lspci_res = safe_exec(["lspci"], timeout_seconds=2.0)
+        if lspci_res.returncode == 0 and lspci_res.stdout:
+            for line in lspci_res.stdout.splitlines():
+                if any(kw in line.lower() for kw in ("vga compatible controller", "3d controller", "display controller")):
+                    # e.g., "00:02.0 VGA compatible controller: Intel Corporation Alder Lake-UP3 GT2 [Iris Xe Graphics] (rev 0c)"
+                    if ":" in line:
+                        parts = line.split(":", 2)
+                        gpu_name = parts[-1].strip()
+                        break
+
+        # Fallback to DRM driver name if lspci is not available
+        driver = "unknown"
+        if drm_dir.is_dir():
+            try:
+                for card in drm_dir.glob("card[0-9]"):
+                    driver_link = card / "device" / "driver"
+                    if driver_link.is_symlink() or driver_link.is_dir():
+                        driver = driver_link.resolve().name
+                        break
+            except OSError:
+                pass
+
+        return {
+            "model": gpu_name,
+            "driver": driver,
+            "source": "linux-drm-lspci",
+        }
+
+    def collect_display(self) -> dict[str, Any] | None:
+        """Collect primary connected display interface and native resolution from DRM modes."""
+        drm_dir = self.sysfs / "class" / "drm"
+        if not drm_dir.is_dir():
+            return None
+
+        primary_display = None
+        all_displays = []
+
+        try:
+            for entry in sorted(drm_dir.iterdir()):
+                status_file = entry / "status"
+                modes_file = entry / "modes"
+                if status_file.is_file():
+                    status = _read_str(status_file)
+                    if status == "connected":
+                        modes = []
+                        if modes_file.is_file():
+                            try:
+                                modes = [m.strip() for m in modes_file.read_text(encoding="utf-8").splitlines() if m.strip()]
+                            except OSError:
+                                pass
+
+                        native_res = modes[0] if modes else "Unknown"
+                        display_info = {
+                            "interface": entry.name,
+                            "status": "connected",
+                            "resolution": native_res,
+                            "supported_modes": modes[:5],
+                        }
+                        all_displays.append(display_info)
+                        if "eDP" in entry.name or primary_display is None:
+                            primary_display = display_info
+        except OSError:
+            pass
+
+        return primary_display
+
+    def collect_ac_adapter(self) -> dict[str, Any] | None:
+        """Collect AC power adapter online / plugged-in state and negotiated power."""
+        ps_dir = self.sysfs / "class" / "power_supply"
+        if not ps_dir.is_dir():
+            return None
+
+        try:
+            for entry in ps_dir.iterdir():
+                dev_type = _read_str(entry / "type")
+                if dev_type == "Mains" or entry.name.startswith("AC") or entry.name.startswith("ADP"):
+                    online_val = _read_int(entry / "online")
+                    voltage_now = _read_int(entry / "voltage_now")
+                    current_max = _read_int(entry / "current_max")
+                    power_now = _read_int(entry / "power_now")
+
+                    wattage = None
+                    if voltage_now and current_max:
+                        # (uV * uA) / 10^12 = W
+                        wattage = round((voltage_now * current_max) / 1_000_000_000_000.0, 1)
+
+                    return {
+                        "name": entry.name,
+                        "online": online_val == 1,
+                        "wattage_w": wattage,
+                        "source": f"linux-sysfs:{entry}",
+                    }
+        except OSError:
+            pass
+
+        return None
+
+    def collect_thermals(self) -> dict[str, Any]:
+        """Collect thermal zone temperatures across CPU and system sensors."""
+        thermal_dir = self.sysfs / "class" / "thermal"
+        zones: list[dict[str, Any]] = []
+
+        if thermal_dir.is_dir():
+            try:
+                for entry in sorted(thermal_dir.glob("thermal_zone*")):
+                    zone_type = _read_str(entry / "type") or entry.name
+                    temp_raw = _read_int(entry / "temp")
+                    if temp_raw is not None:
+                        # Linux sysfs reports thermal zone temp in millidegrees Celsius
+                        temp_c = round(temp_raw / 1000.0, 1) if temp_raw > 1000 else float(temp_raw)
+                        zones.append({
+                            "zone": entry.name,
+                            "type": zone_type,
+                            "temp_c": temp_c,
+                        })
+            except OSError:
+                pass
+
+        avg_temp = round(sum(z["temp_c"] for z in zones) / len(zones), 1) if zones else None
+        max_temp = max((z["temp_c"] for z in zones), default=None)
+
+        return {
+            "zones": zones,
+            "average_temp_c": avg_temp,
+            "max_temp_c": max_temp,
+            "source": f"linux-sysfs:{thermal_dir}",
+        }
+
+    def probe_host_specs(self) -> dict[str, Any]:
+        """Generate a complete hardware telemetry report for instant auto-detection."""
+        mem = self.collect_memory()
+        total_bytes = mem.get("total_bytes") or 0
+        total_gib = round(total_bytes / (1024 ** 3), 1) if total_bytes else 0
+
+        bat = self.collect_battery()
+        storage = self.collect_storage()
+
+        return {
+            "system": self.collect_system(),
+            "cpu": self.collect_cpu(),
+            "gpu": self.collect_gpu(),
+            "memory": {
+                **mem,
+                "total_gib": total_gib,
+            },
+            "storage": storage,
+            "battery": bat,
+            "display": self.collect_display(),
+            "ac_adapter": self.collect_ac_adapter(),
+            "thermals": self.collect_thermals(),
+        }
+
     def collect_snapshot(self, claims: dict[str, Any] | None = None) -> dict[str, Any]:
         """Produce a normalized inspection snapshot dictionary ready for analysis."""
         now = datetime.now(timezone.utc).isoformat()
@@ -235,6 +437,11 @@ class LinuxCollector:
                 "collected_at": now,
             },
             "system": self.collect_system(),
+            "cpu": self.collect_cpu(),
+            "gpu": self.collect_gpu(),
+            "display": self.collect_display(),
+            "ac_adapter": self.collect_ac_adapter(),
+            "thermals": self.collect_thermals(),
             "claims": claims or {},
             "battery": self.collect_battery(),
             "storage": self.collect_storage(),

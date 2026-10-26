@@ -62,6 +62,31 @@ class LinuxCollectorFixtureTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+        # Setup mock cpuinfo
+        (self.proc / "cpuinfo").write_text(
+            "processor\t: 0\n"
+            "model name\t: AMD Ryzen 7 7840U w/ Radeon 780M Graphics\n"
+            "cpu MHz\t\t: 3300.000\n"
+            "cpu cores\t: 8\n\n"
+            "processor\t: 1\n"
+            "model name\t: AMD Ryzen 7 7840U w/ Radeon 780M Graphics\n"
+            "cpu MHz\t\t: 3300.000\n"
+            "cpu cores\t: 8\n",
+            encoding="utf-8",
+        )
+
+        # Setup mock AC adapter
+        ac_dir = self.sysfs / "class" / "power_supply" / "AC0"
+        ac_dir.mkdir(parents=True)
+        (ac_dir / "online").write_text("1\n", encoding="utf-8")
+        (ac_dir / "type").write_text("Mains\n", encoding="utf-8")
+
+        # Setup mock display DRM
+        drm_dir = self.sysfs / "class" / "drm" / "card0-eDP-1"
+        drm_dir.mkdir(parents=True)
+        (drm_dir / "status").write_text("connected\n", encoding="utf-8")
+        (drm_dir / "modes").write_text("2880x1800\n1920x1200\n", encoding="utf-8")
+
         self.collector = LinuxCollector(sysfs_root=self.sysfs, proc_root=self.proc)
 
     def tearDown(self):
@@ -104,6 +129,32 @@ class LinuxCollectorFixtureTests(unittest.TestCase):
         self.assertEqual(sys_info["vendor"], "Framework")
         self.assertIn("Laptop 13", sys_info["model"])
         self.assertEqual(sys_info["bios_version"], "03.05")
+
+    def test_collect_cpu(self):
+        cpu = self.collector.collect_cpu()
+        self.assertIsNotNone(cpu)
+        self.assertIn("Ryzen 7 7840U", cpu["model"])
+        self.assertEqual(cpu["cores"], 8)
+        self.assertEqual(cpu["threads"], 2)
+
+    def test_collect_display(self):
+        display = self.collector.collect_display()
+        self.assertIsNotNone(display)
+        self.assertEqual(display["resolution"], "2880x1800")
+        self.assertIn("card0-eDP-1", display["interface"])
+
+    def test_collect_ac_adapter(self):
+        ac = self.collector.collect_ac_adapter()
+        self.assertIsNotNone(ac)
+        self.assertTrue(ac["online"])
+
+    def test_probe_host_specs(self):
+        specs = self.collector.probe_host_specs()
+        self.assertIn("cpu", specs)
+        self.assertIn("battery", specs)
+        self.assertIn("display", specs)
+        self.assertIn("memory", specs)
+        self.assertEqual(specs["system"]["vendor"], "Framework")
 
     def test_collect_snapshot_runs_analysis_cleanly(self):
         snapshot = self.collector.collect_snapshot(claims={"ram_gib": 16, "storage_capacity_gb": 512})
