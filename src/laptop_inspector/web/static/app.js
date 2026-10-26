@@ -588,18 +588,21 @@ class App {
     }
 
     // 3. CPU Temperature Gauge
-    const thermals = snapshot.thermals || [];
+    const thermalsData = snapshot.thermals || {};
+    const zones = Array.isArray(thermalsData) ? thermalsData : (thermalsData.zones || []);
     const tempText = document.getElementById("cpuTempText");
     const tempSub = document.getElementById("thermalStatusSub");
 
-    let peakTemp = null;
-    thermals.forEach(t => {
-      if (typeof t.temp_c === "number") {
-        if (peakTemp === null || t.temp_c > peakTemp) {
-          peakTemp = t.temp_c;
+    let peakTemp = typeof thermalsData.max_temp_c === "number" ? thermalsData.max_temp_c : null;
+    if (peakTemp === null) {
+      zones.forEach(t => {
+        if (typeof t.temp_c === "number") {
+          if (peakTemp === null || t.temp_c > peakTemp) {
+            peakTemp = t.temp_c;
+          }
         }
-      }
-    });
+      });
+    }
 
     if (peakTemp !== null) {
       tempText.textContent = `${Math.round(peakTemp)}°C`;
@@ -897,15 +900,16 @@ class App {
     const cpuTable = document.getElementById("expertCpuTable");
     if (cpuTable) {
       const cpu = snapshot.cpu || {};
-      const thermals = snapshot.thermals || [];
+      const thermalsData = snapshot.thermals || {};
+      const zones = Array.isArray(thermalsData) ? thermalsData : (thermalsData.zones || []);
       let rows = `
         <tr><td><strong>Model</strong></td><td><code>${cpu.model || "Unknown"}</code></td></tr>
         <tr><td><strong>Topology</strong></td><td><code>${cpu.cores || "?"} physical cores / ${cpu.threads || "?"} threads</code></td></tr>
         <tr><td><strong>Max Frequency</strong></td><td><code>${cpu.mhz ? `${cpu.mhz} MHz` : "Dynamic"}</code></td></tr>
         <tr><td><strong>Architecture</strong></td><td><code>${cpu.arch || "x86_64"}</code></td></tr>
       `;
-      if (thermals.length > 0) {
-        const tList = thermals.map(t => `${t.type || t.zone}: ${t.temp_c}°C`).join("<br>");
+      if (zones.length > 0) {
+        const tList = zones.map(t => `${t.type || t.zone}: ${t.temp_c}°C`).join("<br>");
         rows += `<tr><td><strong>Thermal Sensors</strong></td><td><code>${tList}</code></td></tr>`;
       }
       cpuTable.innerHTML = rows;
