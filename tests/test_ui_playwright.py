@@ -261,3 +261,48 @@ class UITestsPlaywright(unittest.TestCase):
         self.assertTrue(self.page.locator("#runPulseBtn").is_visible())
         self.assertTrue(self.page.locator("#refreshFansBtn").is_visible())
         self.assertTrue(self.page.locator("#btnFanPerformance").is_visible())
+
+    def test_portable_mode_and_export(self):
+        self.page.goto(f"http://{TEST_HOST}:{TEST_PORT}")
+
+        # Check App Mode Badge
+        self.assertTrue(self.page.locator("#appModeBadge").is_visible())
+        badge_text = self.page.locator("#appModeBadge").inner_text()
+        self.assertTrue(any(term in badge_text for term in ["PORTABLE", "SYSTEM"]))
+
+        # Verify /api/health exposes portable fields
+        resp = self.page.request.get(f"http://{TEST_HOST}:{TEST_PORT}/api/health")
+        self.assertTrue(resp.ok)
+        health_data = resp.json()
+        self.assertIn("portable_mode", health_data)
+        self.assertIn("db_path", health_data)
+        self.assertIn("reports_dir", health_data)
+
+        # Load synthetic sample session
+        self.page.click("#loadSampleBtn")
+        self.page.wait_for_selector("#sessionResults", state="visible")
+
+        # Save report directly to USB / reports directory
+        save_btn = self.page.locator("#saveUsbReportBtn")
+        self.assertTrue(save_btn.is_visible())
+        save_btn.click()
+
+        self.page.wait_for_function(
+            "document.getElementById('saveUsbReportStatus').textContent.includes('Saved to USB')",
+            timeout=5000,
+        )
+        status_text = self.page.locator("#saveUsbReportStatus").inner_text()
+        self.assertIn("Saved to USB", status_text)
+
+        # Verify report files actually exist on disk
+        reports_dir = Path(health_data["reports_dir"])
+        html_files = list(reports_dir.glob("inspection-*.html"))
+        json_files = list(reports_dir.glob("inspection-*.json"))
+        self.assertGreater(len(html_files), 0)
+        self.assertGreater(len(json_files), 0)
+
+        # Clean up files created during this test
+        for f in html_files + json_files:
+            if "SAMPLE-USED-T14-DEMO" in f.name:
+                f.unlink(missing_ok=True)
+

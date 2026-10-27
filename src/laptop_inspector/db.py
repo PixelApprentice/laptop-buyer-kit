@@ -6,6 +6,7 @@ findings, manual test results, and test coverage matrices with zero external dep
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -17,7 +18,59 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-DEFAULT_DB_PATH = Path.home() / ".local" / "share" / "laptop-buyer-kit" / "inspections.sqlite3"
+def get_portable_dir() -> Path:
+    """Return the base directory for portable mode (where .portable or repository root is located)."""
+    env_dir = os.environ.get("AEGIS_PORTABLE_DIR")
+    if env_dir:
+        return Path(env_dir).resolve()
+
+    current = Path(__file__).resolve().parent
+    for parent in [current, current.parent, current.parent.parent, current.parent.parent.parent]:
+        if (parent / ".portable").is_file() or (parent / "autorun.inf").is_file():
+            return parent
+
+    return Path.cwd().resolve()
+
+
+def is_portable_mode() -> bool:
+    """Return True if portable mode is requested via env, flag, or marker file."""
+    if os.environ.get("AEGIS_PORTABLE") in ("1", "true", "yes", "on"):
+        return True
+    if os.environ.get("LAPTOP_INSPECTOR_PORTABLE") in ("1", "true", "yes", "on"):
+        return True
+    portable_marker = get_portable_dir() / ".portable"
+    return portable_marker.is_file()
+
+
+def get_default_db_path(portable: bool | None = None) -> Path:
+    """Resolve database path depending on portable vs normal system mode."""
+    if portable is None:
+        portable = is_portable_mode()
+
+    if portable:
+        return get_portable_dir() / "aegis_data" / "inspections.sqlite3"
+
+    # Normal mode: platform standard app data
+    if os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        return base / "laptop-buyer-kit" / "inspections.sqlite3"
+    return Path.home() / ".local" / "share" / "laptop-buyer-kit" / "inspections.sqlite3"
+
+
+def get_reports_dir(portable: bool | None = None) -> Path:
+    """Return the directory where generated inspection reports are saved."""
+    if portable is None:
+        portable = is_portable_mode()
+
+    if portable:
+        p = get_portable_dir() / "aegis_reports"
+    else:
+        p = Path.home() / "Documents" / "Aegis_Reports"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+DEFAULT_DB_PATH = get_default_db_path(portable=False)
 
 
 class Database:

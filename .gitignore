@@ -10,6 +10,8 @@ htmlcov/
 report.html
 report.json
 reports/
+aegis_data/
+aegis_reports/
 *.sqlite3
 .env
 .DS_Store

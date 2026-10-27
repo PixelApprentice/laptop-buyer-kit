@@ -1,42 +1,58 @@
 @echo off
-:: Aegis Laptop Diagnostics - USB Portable Launcher
-:: --------------------------------------------------
-:: This batch file starts the Aegis server and opens the browser.
-:: It requires Python 3.10+ to be installed on the target machine.
+setlocal
+:: ============================================================================
+:: Aegis Laptop Diagnostics - Zero-Trace USB Portable Launcher (Windows)
+:: ============================================================================
+:: Runs directly from USB drive with zero installation and zero disk trace.
+:: All inspection histories and HTML reports are written to this USB drive.
 ::
-:: UAC elevation is requested via the .manifest file so Aegis
-:: can access hardware telemetry registers (SMART, hwmon, ACPI).
-::
-:: NO data is sent externally. 100% offline and local.
+:: 100% offline, local-only, zero network requests, zero telemetry.
+:: ============================================================================
 
-title Aegis Laptop Diagnostics
+title Aegis Laptop Diagnostics [USB Portable Mode]
+cd /d "%~dp0"
 
-:: Check Python is available
+:: Set PYTHONPATH so no pip install or system modification is required
+set "PYTHONPATH=%~dp0src;%PYTHONPATH%"
+set "AEGIS_PORTABLE=1"
+
+:: Check for python in system PATH
 where python >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Python is not installed or not in PATH.
-    echo Download from https://www.python.org/downloads/
-    pause
-    exit /b 1
+if %ERRORLEVEL% equ 0 (
+    echo [Aegis] Starting zero-trace portable diagnostics on http://127.0.0.1:8080 ...
+    start "" python -m laptop_inspector.cli serve --portable
+    timeout /t 1 /nobreak >nul
+    start "" http://127.0.0.1:8080
+    exit /b 0
 )
 
-:: Install/check the package (offline from this USB if bundled)
-echo [Aegis] Checking installation...
-python -m pip install -e . --quiet 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo [WARNING] Could not install via pip. Trying direct launch...
+:: Check for py launcher
+where py >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    echo [Aegis] Starting zero-trace portable diagnostics via py launcher...
+    start "" py -m laptop_inspector.cli serve --portable
+    timeout /t 1 /nobreak >nul
+    start "" http://127.0.0.1:8080
+    exit /b 0
 )
 
-:: Launch the server on localhost:8080
-echo [Aegis] Starting offline diagnostics server on http://127.0.0.1:8080
-start "" python -m laptop_inspector.web.server
+:: Check for bundled embeddable python if present on USB
+if exist "%~dp0python\python.exe" (
+    echo [Aegis] Starting via bundled portable Python...
+    start "" "%~dp0python\python.exe" -m laptop_inspector.cli serve --portable
+    timeout /t 1 /nobreak >nul
+    start "" http://127.0.0.1:8080
+    exit /b 0
+)
 
-:: Wait 2 seconds for server to start
-timeout /t 2 /nobreak >nul
-
-:: Open browser
-echo [Aegis] Opening browser...
-start "" http://127.0.0.1:8080
-
-echo [Aegis] Server running. Press Ctrl+C in the server window to stop.
+echo.
+echo ============================================================================
+echo [ERROR] Python 3.10+ was not found on this system.
+echo.
+echo Aegis is an open-source diagnostics suite requiring Python.
+echo Please install Python from https://www.python.org/downloads/
+echo or place Windows embeddable Python into: %~dp0python\
+echo ============================================================================
+echo.
 pause
+exit /b 1

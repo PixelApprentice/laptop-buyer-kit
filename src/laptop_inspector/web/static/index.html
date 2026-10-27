@@ -78,7 +78,7 @@
             <span class="mode-label expert-label">Expert</span>
           </div>
 
-          <span class="badge status-passed" title="100% offline, zero network requests">LOCAL</span>
+          <span id="appModeBadge" class="badge status-passed" title="100% offline, zero network requests">LOCAL</span>
           <button id="themeToggleBtn" class="btn btn-icon" title="Toggle Theme (Light / Dark)">🌓</button>
         </div>
       </div>
@@ -272,6 +272,8 @@
                   <a id="exportHtmlBtn" class="btn btn-sm btn-outline" target="_blank">Download HTML Report</a>
                   <a id="exportJsonBtn" class="btn btn-sm btn-outline" target="_blank">Download JSON</a>
                   <button type="button" id="printReportBtn" class="btn btn-sm btn-outline">Print View</button>
+                  <button type="button" id="saveUsbReportBtn" class="btn btn-sm btn-primary" title="Save HTML and JSON report directly into USB drive ./aegis_reports/">💾 Save to USB Reports</button>
+                  <span id="saveUsbReportStatus" class="text-muted" style="font-size:0.75rem; align-self:center;"></span>
                 </div>
               </div>
 
@@ -816,6 +818,12 @@
               <li><strong>Transparent Uncertainty:</strong> Missing or unsupported metrics are never converted into a fake "100% Pass".</li>
               <li><strong>Discrepancy Investigation:</strong> Non-destructive discrepancy detection without automatic accusations of seller fraud.</li>
               <li><strong>Safe Buyer Mode:</strong> Read-only inspection; no destructive wipes, partition edits, or unapproved firmware modifications.</li>
+            </ul>
+
+            <h3>Dual Execution Modes: Portable vs. Normal</h3>
+            <ul class="feature-list">
+              <li><strong>⚡ USB Portable Mode (Zero-Trace):</strong> When launched from a USB drive via <code>start-aegis.bat</code> (Windows) or <code>./run-portable.sh</code> (Linux), all inspection histories and exported reports are written directly to <code>./aegis_data/</code> and <code>./aegis_reports/</code> on the USB stick. Zero files, registry keys, or temp directories are left on the target laptop.</li>
+              <li><strong>💻 Normal System Mode:</strong> Standard local installation storing records in user application directories (<code>~/.local/share/laptop-buyer-kit/</code>).</li>
             </ul>
 
             <h3>Author &amp; Architecture</h3>

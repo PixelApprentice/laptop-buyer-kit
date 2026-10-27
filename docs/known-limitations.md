@@ -45,3 +45,7 @@ As of this starter pack:
 ### Performance on Low-End Hardware
 - The 5-second thermal pulse benchmark (`/api/benchmark/cpu-pulse`) uses pure Python math; actual CPU load and thermal rise depends on process priority and existing load.
 - The UFO canvas animation rate depends on browser compositor frame rate; headless or power-saving mode may reduce the reported Hz.
+
+## v2.2.0 Portable Zero-Trace Mode Notes
+- When run from a read-only USB media (e.g. write-protected drive or ISO9660 filesystem), SQLite and report writing will fail if the directory is non-writable. Aegis requires writable storage on the portable drive to save sessions and reports into `aegis_data/` and `aegis_reports/`.
+- Parallelized collector execution (`ThreadPoolExecutor`) runs up to 8 threads concurrently. On single-core vintage CPUs, operations will interleave via Python GIL, falling back gracefully without performance penalties.

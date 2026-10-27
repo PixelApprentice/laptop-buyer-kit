@@ -1,10 +1,18 @@
 import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from laptop_inspector.analysis import analyze_snapshot
-from laptop_inspector.db import Database
+from laptop_inspector.db import (
+    Database,
+    get_default_db_path,
+    get_portable_dir,
+    get_reports_dir,
+    is_portable_mode,
+)
 
 FIXTURE = Path(__file__).parents[1] / "examples" / "sample_session.json"
 
@@ -72,6 +80,66 @@ class DatabaseTests(unittest.TestCase):
         self.assertTrue(self.db.delete_session(session_id))
         self.assertIsNone(self.db.get_session(session_id))
         self.assertFalse(self.db.delete_session(session_id))
+
+
+class PortableModeTests(unittest.TestCase):
+    def setUp(self):
+        self._orig_env = os.environ.copy()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._orig_env)
+
+    def test_get_portable_dir_override(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["AEGIS_PORTABLE_DIR"] = tmpdir
+            resolved = get_portable_dir()
+            self.assertEqual(resolved, Path(tmpdir).resolve())
+
+    def test_is_portable_mode_env(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["AEGIS_PORTABLE_DIR"] = tmpdir
+            os.environ.pop("AEGIS_PORTABLE", None)
+            os.environ.pop("LAPTOP_INSPECTOR_PORTABLE", None)
+
+            # In an empty temp dir with no .portable file, returns False
+            self.assertFalse(is_portable_mode())
+
+            # Setting AEGIS_PORTABLE enables it
+            os.environ["AEGIS_PORTABLE"] = "1"
+            self.assertTrue(is_portable_mode())
+
+            # Setting LAPTOP_INSPECTOR_PORTABLE enables it
+            os.environ.pop("AEGIS_PORTABLE")
+            os.environ["LAPTOP_INSPECTOR_PORTABLE"] = "true"
+            self.assertTrue(is_portable_mode())
+
+    def test_is_portable_mode_marker_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["AEGIS_PORTABLE_DIR"] = tmpdir
+            os.environ.pop("AEGIS_PORTABLE", None)
+            os.environ.pop("LAPTOP_INSPECTOR_PORTABLE", None)
+
+            marker = Path(tmpdir) / ".portable"
+            marker.touch()
+            self.assertTrue(is_portable_mode())
+
+    def test_get_default_db_path_portable_vs_normal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["AEGIS_PORTABLE_DIR"] = tmpdir
+            portable_path = get_default_db_path(portable=True)
+            self.assertEqual(portable_path, Path(tmpdir).resolve() / "aegis_data" / "inspections.sqlite3")
+
+            normal_path = get_default_db_path(portable=False)
+            self.assertNotEqual(normal_path, portable_path)
+            self.assertTrue(str(normal_path).endswith("inspections.sqlite3"))
+
+    def test_get_reports_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["AEGIS_PORTABLE_DIR"] = tmpdir
+            reports_dir = get_reports_dir(portable=True)
+            self.assertEqual(reports_dir, Path(tmpdir).resolve() / "aegis_reports")
+            self.assertTrue(reports_dir.is_dir())
 
 
 if __name__ == "__main__":

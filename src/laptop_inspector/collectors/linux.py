@@ -954,36 +954,69 @@ class LinuxCollector:
             return {"success": False, "error": str(exc)}
 
     def probe_host_specs(self) -> dict[str, Any]:
-        """Generate a complete hardware telemetry report for instant auto-detection."""
-        mem = self.collect_memory()
+        """Generate a complete hardware telemetry report for instant auto-detection (concurrent & ultra-fast)."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            f_sys = ex.submit(self.collect_system)
+            f_cpu = ex.submit(self.collect_cpu)
+            f_gpu = ex.submit(self.collect_gpu)
+            f_mem = ex.submit(self.collect_memory)
+            f_sto = ex.submit(self.collect_storage)
+            f_bat = ex.submit(self.collect_battery)
+            f_dis = ex.submit(self.collect_display)
+            f_ac = ex.submit(self.collect_ac_adapter)
+            f_thm = ex.submit(self.collect_thermals)
+            f_prt = ex.submit(self.collect_ports)
+            f_net = ex.submit(self.collect_network)
+            f_ext = ex.submit(self.collect_system_extended)
+            f_fan = ex.submit(self.collect_fans)
+            f_pro = ex.submit(self.get_fan_profiles)
+
+        mem = f_mem.result()
         total_bytes = mem.get("total_bytes") or 0
         total_gib = round(total_bytes / (1024 ** 3), 1) if total_bytes else 0
 
-        bat = self.collect_battery()
-        storage = self.collect_storage()
-
         return {
-            "system": self.collect_system(),
-            "cpu": self.collect_cpu(),
-            "gpu": self.collect_gpu(),
+            "system": f_sys.result(),
+            "cpu": f_cpu.result(),
+            "gpu": f_gpu.result(),
             "memory": {
                 **mem,
                 "total_gib": total_gib,
             },
-            "storage": storage,
-            "battery": bat,
-            "display": self.collect_display(),
-            "ac_adapter": self.collect_ac_adapter(),
-            "thermals": self.collect_thermals(),
-            "ports": self.collect_ports(),
-            "network": self.collect_network(),
-            "system_extended": self.collect_system_extended(),
-            "fans": self.collect_fans(),
-            "fan_profiles": self.get_fan_profiles(),
+            "storage": f_sto.result(),
+            "battery": f_bat.result(),
+            "display": f_dis.result(),
+            "ac_adapter": f_ac.result(),
+            "thermals": f_thm.result(),
+            "ports": f_prt.result(),
+            "network": f_net.result(),
+            "system_extended": f_ext.result(),
+            "fans": f_fan.result(),
+            "fan_profiles": f_pro.result(),
         }
 
     def collect_snapshot(self, claims: dict[str, Any] | None = None) -> dict[str, Any]:
-        """Produce a normalized inspection snapshot dictionary ready for analysis."""
+        """Produce a normalized inspection snapshot dictionary ready for analysis (concurrent & ultra-fast)."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            f_sys = ex.submit(self.collect_system)
+            f_cpu = ex.submit(self.collect_cpu)
+            f_gpu = ex.submit(self.collect_gpu)
+            f_dis = ex.submit(self.collect_display)
+            f_ac = ex.submit(self.collect_ac_adapter)
+            f_thm = ex.submit(self.collect_thermals)
+            f_bat = ex.submit(self.collect_battery)
+            f_sto = ex.submit(self.collect_storage)
+            f_mem = ex.submit(self.collect_memory)
+            f_prt = ex.submit(self.collect_ports)
+            f_net = ex.submit(self.collect_network)
+            f_ext = ex.submit(self.collect_system_extended)
+            f_fan = ex.submit(self.collect_fans)
+            f_pro = ex.submit(self.get_fan_profiles)
+
         now = datetime.now(timezone.utc).isoformat()
         return {
             "schema_version": "1.0",
@@ -991,19 +1024,19 @@ class LinuxCollector:
                 "id": f"LINUX-COLLECT-{int(datetime.now(timezone.utc).timestamp())}",
                 "collected_at": now,
             },
-            "system": self.collect_system(),
-            "cpu": self.collect_cpu(),
-            "gpu": self.collect_gpu(),
-            "display": self.collect_display(),
-            "ac_adapter": self.collect_ac_adapter(),
-            "thermals": self.collect_thermals(),
+            "system": f_sys.result(),
+            "cpu": f_cpu.result(),
+            "gpu": f_gpu.result(),
+            "display": f_dis.result(),
+            "ac_adapter": f_ac.result(),
+            "thermals": f_thm.result(),
             "claims": claims or {},
-            "battery": self.collect_battery(),
-            "storage": self.collect_storage(),
-            "memory": self.collect_memory(),
-            "ports": self.collect_ports(),
-            "network": self.collect_network(),
-            "system_extended": self.collect_system_extended(),
-            "fans": self.collect_fans(),
-            "fan_profiles": self.get_fan_profiles(),
+            "battery": f_bat.result(),
+            "storage": f_sto.result(),
+            "memory": f_mem.result(),
+            "ports": f_prt.result(),
+            "network": f_net.result(),
+            "system_extended": f_ext.result(),
+            "fans": f_fan.result(),
+            "fan_profiles": f_pro.result(),
         }

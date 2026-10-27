@@ -155,11 +155,33 @@ class App {
 
     this.initTheme();
     this.initMode();
+    this.checkAppMode();
     this.bindEvents();
     this.buildKeyboard();
     this.initTrackpadCanvas();
     this.initKeyboardHeatmap();
     this.loadHistory();
+  }
+
+  async checkAppMode() {
+    try {
+      const resp = await fetch("/api/health");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      this.appHealth = data;
+      const badge = document.getElementById("appModeBadge");
+      if (badge) {
+        if (data.portable_mode) {
+          badge.textContent = "⚡ USB PORTABLE";
+          badge.className = "badge status-passed portable-pulse";
+          badge.title = `Zero-Trace Portable USB Mode active. All reports and SQLite database saved to USB drive: ${data.db_path}`;
+        } else {
+          badge.textContent = "LOCAL SYSTEM";
+          badge.className = "badge status-passed";
+          badge.title = `System Mode: Database at ${data.db_path}`;
+        }
+      }
+    } catch (_) {}
   }
 
   // --------------------------------------------------------------------------
@@ -269,6 +291,12 @@ class App {
 
     // Print Report
     document.getElementById("printReportBtn").addEventListener("click", () => window.print());
+
+    // Save to USB Reports
+    const saveUsbBtn = document.getElementById("saveUsbReportBtn");
+    if (saveUsbBtn) {
+      saveUsbBtn.addEventListener("click", () => this.saveToUsbReports());
+    }
 
     // Screen Test Tool
     document.getElementById("launchScreenTestBtn").addEventListener("click", () => this.startScreenTest());
@@ -528,6 +556,10 @@ class App {
     // Export links
     document.getElementById("exportHtmlBtn").href = `/api/export/${session.id}/html`;
     document.getElementById("exportJsonBtn").href = `/api/export/${session.id}/json`;
+    const saveUsbBtn = document.getElementById("saveUsbReportBtn");
+    if (saveUsbBtn) saveUsbBtn.disabled = false;
+    const saveStatus = document.getElementById("saveUsbReportStatus");
+    if (saveStatus) saveStatus.textContent = "";
 
     // Render Health Gauges
     this.renderHealthGauges(session.snapshot || {});
@@ -546,6 +578,37 @@ class App {
 
     // Render Expert Mode Telemetry Tables
     this.renderExpertTelemetry(session.snapshot || {});
+  }
+
+  async saveToUsbReports() {
+    if (!this.currentSession) {
+      alert("Please run or load an inspection session first.");
+      return;
+    }
+    const btn = document.getElementById("saveUsbReportBtn");
+    const status = document.getElementById("saveUsbReportStatus");
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = "Writing report to USB storage...";
+
+    try {
+      const resp = await fetch("/api/export/portable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: this.currentSession.id })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        if (status) {
+          status.innerHTML = `<span style="color:var(--severity-passed); font-weight:600;">✓ Saved to USB: <code>${data.html_file}</code></span>`;
+        }
+      } else {
+        if (status) status.textContent = `Notice: ${data.error || "Save failed"}`;
+      }
+    } catch (err) {
+      if (status) status.textContent = `Error: ${err.message}`;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   renderHealthGauges(snapshot) {

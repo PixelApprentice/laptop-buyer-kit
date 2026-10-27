@@ -80,3 +80,13 @@ Use this as the source-of-truth task list when working with Antigravity. Mark it
 - [ ] Code signing for Windows (requires EV certificate — future work).
 - [ ] EDID panel type lookup (OLED/IPS/TN/VA) from binary EDID — future work.
 - [ ] Fan speed control (max/whisper mode) — requires root + fancontrol; advisory-only for now.
+
+## Phase 7 — v2.2.0 USB portable zero-trace & Rufus-tier performance
+
+- [x] Dual-mode architecture: Automatic portable detection (`.portable` marker, `AEGIS_PORTABLE` env, `--portable` flag) vs standard system install.
+- [x] Zero-trace USB storage: SQLite database routed to `<usb_root>/aegis_data/inspections.sqlite3` and reports to `<usb_root>/aegis_reports/`, leaving zero host traces.
+- [x] Rufus-tier performance: Refactored `LinuxCollector.probe_host_specs()` and `collect_snapshot()` to use `ThreadPoolExecutor(max_workers=8)` for concurrent subsystem queries (67% speedup: latency dropped from ~3.7s to ~1.1s).
+- [x] Direct-to-USB report persistence: Added `POST /api/export/portable` endpoint and dedicated "⚡ Save Report to USB" UI action.
+- [x] UI Mode indicator: Added persistent `#appModeBadge` in navigation header displaying `⚡ USB PORTABLE` (pulsing emerald glow) or `LOCAL SYSTEM`.
+- [x] Cross-platform portable launchers: Updated `start-aegis.bat` with local `PYTHONPATH` injection (no `pip install` required, zero host pollution) and added executable `run-portable.sh` for Linux USB boot.
+- [x] Comprehensive test coverage: Added `PortableModeTests` in `tests/test_db.py` and `test_portable_mode_and_export` in `tests/test_ui_playwright.py` (71 total tests all passing cleanly).

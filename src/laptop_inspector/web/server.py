@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from ..analysis import analyze_snapshot
 from ..collectors.linux import LinuxCollector
-from ..db import Database, DEFAULT_DB_PATH
+from ..db import Database, DEFAULT_DB_PATH, get_default_db_path, get_reports_dir, is_portable_mode
 from ..report import to_html, to_json
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -22,8 +22,12 @@ STATIC_DIR = Path(__file__).parent / "static"
 class InspectorRequestHandler(SimpleHTTPRequestHandler):
     """Custom HTTP handler serving the dashboard SPA and local JSON REST APIs."""
 
-    def __init__(self, *args: Any, db: Database | None = None, **kwargs: Any) -> None:
-        self.db = db or Database(DEFAULT_DB_PATH)
+    def __init__(self, *args: Any, db: Database | None = None, portable: bool | None = None, **kwargs: Any) -> None:
+        self.portable = portable
+        if db is not None:
+            self.db = db
+        else:
+            self.db = Database(get_default_db_path(portable=self.portable))
         super().__init__(*args, directory=str(STATIC_DIR), **kwargs)
 
     def _send_json(self, data: Any, status: HTTPStatus = HTTPStatus.OK) -> None:
@@ -61,11 +65,15 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
         path = parsed.path.rstrip("/")
 
         if path == "/api/health":
+            is_portable = is_portable_mode() if self.portable is None else self.portable
             self._send_json({
                 "status": "healthy",
                 "application": "Laptop Buyer Kit",
                 "version": "2.1.0",
                 "offline_mode": True,
+                "portable_mode": is_portable,
+                "db_path": str(self.db.db_path),
+                "reports_dir": str(get_reports_dir(portable=is_portable)),
             })
             return
 
@@ -241,6 +249,31 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
                 self._send_error_json(f"Fan profile switch failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
+        if path == "/api/export/portable":
+            session_id = body.get("session_id")
+            if not session_id:
+                self._send_error_json("Missing 'session_id'", HTTPStatus.BAD_REQUEST)
+                return
+            session = self.db.get_session(session_id)
+            if not session:
+                self._send_error_json("Session not found", HTTPStatus.NOT_FOUND)
+                return
+            report = session["report"]
+            is_portable = is_portable_mode() if self.portable is None else self.portable
+            reports_dir = get_reports_dir(portable=is_portable)
+            html_path = reports_dir / f"inspection-{session_id}.html"
+            json_path = reports_dir / f"inspection-{session_id}.json"
+            html_path.write_text(to_html(report), encoding="utf-8")
+            json_path.write_text(to_json(report), encoding="utf-8")
+            self._send_json({
+                "success": True,
+                "session_id": session_id,
+                "html_file": html_path.name,
+                "json_file": json_path.name,
+                "directory": str(reports_dir),
+            })
+            return
+
         if path == "/api/inspect/live":
             claims = body.get("claims") or {}
             operator_notes = body.get("operator_notes")
@@ -313,19 +346,43 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
         self._send_error_json("Unknown endpoint", HTTPStatus.NOT_FOUND)
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8080, db: Database | None = None) -> ThreadingHTTPServer:
-    database = db or Database(DEFAULT_DB_PATH)
+def create_server(
+    host: str = "127.0.0.1",
+    port: int = 8080,
+    db: Database | None = None,
+    portable: bool | None = None,
+) -> ThreadingHTTPServer:
+    database = db or Database(get_default_db_path(portable=portable))
 
     def handler_factory(*args: Any, **kwargs: Any) -> InspectorRequestHandler:
-        return InspectorRequestHandler(*args, db=database, **kwargs)
+        return InspectorRequestHandler(*args, db=database, portable=portable, **kwargs)
 
     return ThreadingHTTPServer((host, port), handler_factory)
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8080, db: Database | None = None) -> None:
-    server = create_server(host=host, port=port, db=db)
-    print(f"Laptop Buyer Kit running locally at: http://{host}:{port}")
+def run_server(
+    host: str = "127.0.0.1",
+    port: int = 8080,
+    db: Database | None = None,
+    portable: bool | None = None,
+    open_browser: bool = False,
+) -> None:
+    server = create_server(host=host, port=port, db=db, portable=portable)
+    mode_label = "USB ZERO-TRACE PORTABLE" if (is_portable_mode() if portable is None else portable) else "NORMAL SYSTEM"
+    print(f"Aegis Laptop Diagnostics [{mode_label}] running locally at: http://{host}:{port}")
     print("Press Ctrl+C to stop.")
+
+    if open_browser:
+        import threading
+        import webbrowser
+
+        def _open():
+            import time
+            time.sleep(0.4)
+            webbrowser.open(f"http://{host}:{port}")
+
+        threading.Thread(target=_open, daemon=True).start()
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:

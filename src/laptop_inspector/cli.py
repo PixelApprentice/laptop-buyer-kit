@@ -22,12 +22,18 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser("serve", help="Launch local offline web dashboard & REST server")
     serve_parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind (default: 127.0.0.1)")
     serve_parser.add_argument("--port", type=int, default=8080, help="Port to listen on (default: 8080)")
+    serve_parser.add_argument("--portable", action="store_true", help="Run in zero-trace portable USB mode (stores DB on current drive)")
+    serve_parser.add_argument("--no-browser", action="store_true", help="Do not automatically launch web browser on startup")
 
     # Analyze command
     analyze_parser = subparsers.add_parser("analyze", help="Analyze a normalized snapshot JSON file")
     analyze_parser.add_argument("snapshot", type=Path, help="Input snapshot JSON file")
     analyze_parser.add_argument("--format", choices=("json", "html"), default="json", help="Report format (default: json)")
     analyze_parser.add_argument("--output", type=Path, help="Output file; defaults to stdout")
+
+    # Global flags
+    parser.add_argument("--portable", action="store_true", help="Run in zero-trace portable USB mode")
+    parser.add_argument("--no-browser", action="store_true", help="Do not automatically launch web browser on startup")
 
     # For backwards compatibility with `laptop-inspector <snapshot>`
     parser.add_argument("legacy_snapshot", nargs="?", type=Path, help=argparse.SUPPRESS)
@@ -40,15 +46,28 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
+    is_portable = getattr(args, "portable", False)
+    no_browser = getattr(args, "no_browser", False)
+
     if args.subcommand == "serve":
-        run_server(host=args.host, port=args.port)
+        run_server(
+            host=args.host,
+            port=args.port,
+            portable=is_portable,
+            open_browser=not no_browser,
+        )
         return 0
 
     snapshot_path = getattr(args, "snapshot", None) or args.legacy_snapshot
     if not snapshot_path:
         # Default to launching dashboard if no arguments provided
         print("No snapshot specified. Starting interactive local dashboard...")
-        run_server(host="127.0.0.1", port=8080)
+        run_server(
+            host="127.0.0.1",
+            port=8080,
+            portable=is_portable,
+            open_browser=not no_browser,
+        )
         return 0
 
     try:
