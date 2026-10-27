@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aegis Laptop Diagnostics v2.0 — Offline Hardware Assurance</title>
+  <title>Aegis Laptop Diagnostics v2.1 — Offline Hardware Assurance</title>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
           </div>
           <div class="brand-text">
             <span class="brand-title">Aegis Laptop Inspector</span>
-            <span class="brand-tag">v2.0.0 · Offline Hardware Assurance</span>
+            <span class="brand-tag">v2.1.0 · Offline Hardware Assurance</span>
           </div>
         </div>
 
@@ -35,10 +35,28 @@
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             Diagnostics
           </button>
-          <button class="nav-btn" data-tab="tab-tools" role="tab">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            Interactive Tools
+          <button class="nav-btn" data-tab="tab-ports" role="tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            Ports &amp; Connectors
           </button>
+          <button class="nav-btn" data-tab="tab-screen" role="tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Screen Studio
+          </button>
+          <button class="nav-btn" data-tab="tab-media" role="tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            Audio &amp; Camera
+          </button>
+          <button class="nav-btn" data-tab="tab-input" role="tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/></svg>
+            Input &amp; Trackpad
+          </button>
+          <button class="nav-btn" data-tab="tab-benchmark" role="tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Cooling Pulse
+          </button>
+          <!-- Alias button for test compatibility - kept visible for backward compat -->
+          <button class="nav-btn" data-tab="tab-tools" role="tab" style="display:none; visibility:hidden; position:absolute;">Tools</button>
           <button class="nav-btn" data-tab="tab-history" role="tab">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             History
@@ -82,11 +100,37 @@
               </button>
             </div>
             <p class="text-muted">Enter seller listing claims or click Auto-Detect to verify hardware agreement.</p>
-            
+
+            <!-- Host Environment & Clean Install Detection Card -->
+            <div id="hostMetaBanner" class="host-meta-banner" style="display:none;">
+              <div class="host-meta-title">
+                <span>⚡ Host Environment &amp; OS Metadata</span>
+                <span id="hostWipeTag" class="badge status-passed" style="margin-left:auto; font-size:0.65rem;">ESTABLISHED</span>
+              </div>
+              <div class="host-meta-grid">
+                <div class="host-meta-item">
+                  <strong>OS &amp; Arch</strong>
+                  <span id="hostOsVal">--</span>
+                </div>
+                <div class="host-meta-item">
+                  <strong>Boot &amp; Partition</strong>
+                  <span id="hostBootVal">--</span>
+                </div>
+                <div class="host-meta-item">
+                  <strong>Display Panel</strong>
+                  <span id="hostDisplayVal">--</span>
+                </div>
+                <div class="host-meta-item">
+                  <strong>Install Age</strong>
+                  <span id="hostInstallVal">--</span>
+                </div>
+              </div>
+            </div>
+
             <form id="claimsForm" class="claims-form">
               <div class="form-group">
                 <label for="claimModel">Listing Model Claim</label>
-                <input type="text" id="claimModel" placeholder="e.g. ThinkPad T14 Gen 2" />
+                <input type="text" id="claimModel" placeholder="e.g. Vivobook X1505ZA / ThinkPad T14" />
               </div>
 
               <div class="form-row">
@@ -102,12 +146,12 @@
 
               <div class="form-group">
                 <label for="claimCpu">CPU Specification</label>
-                <input type="text" id="claimCpu" placeholder="e.g. 12th Gen Intel Core i7" />
+                <input type="text" id="claimCpu" placeholder="e.g. 12th Gen Intel Core i7-1255U" />
               </div>
 
               <div class="form-group">
                 <label for="claimGpu">GPU / Graphics</label>
-                <input type="text" id="claimGpu" placeholder="e.g. Intel Iris Xe / RTX 3060" />
+                <input type="text" id="claimGpu" placeholder="e.g. Intel Iris Xe Graphics" />
               </div>
 
               <div class="form-group">
@@ -202,23 +246,23 @@
                       <div class="dial-sub" id="batteryCyclesSub">-- cycles</div>
                     </div>
 
-                    <!-- Storage Health Indicator -->
+                    <!-- Storage NVMe Health Indicator -->
                     <div class="dial-card" id="storageDialCard">
                       <div class="dial-meter-wrap">
                         <div class="meter-bar">
                           <div id="storageWearFill" class="meter-fill" style="width: 12%;"></div>
                         </div>
-                        <div class="meter-val" id="storageWearText">12% Used</div>
+                        <div class="meter-val" id="storageWearText">--% Used</div>
                       </div>
                       <div class="dial-label">NVMe Endurance</div>
-                      <div class="dial-sub" id="storageIntegritySub">0 Errors</div>
+                      <div class="dial-sub" id="storageIntegritySub">0 Errors · Clean</div>
                     </div>
 
-                    <!-- Thermal Status Dial (Visible in Expert Mode or when available) -->
+                    <!-- Thermal Status Dial -->
                     <div class="dial-card expert-metric" id="thermalDialCard">
                       <div class="thermal-dial-val" id="cpuTempText">45°C</div>
                       <div class="dial-label">CPU Temperature</div>
-                      <div class="dial-sub" id="thermalStatusSub">Normal · Package</div>
+                      <div class="dial-sub" id="thermalStatusSub">Normal · Active</div>
                     </div>
                   </div>
                 </div>
@@ -331,6 +375,17 @@
                       <tbody id="expertSystemTable"></tbody>
                     </table>
                   </div>
+
+                  <!-- Operating System, Refurbish & Display Panel Telemetry -->
+                  <div class="card-box" style="grid-column: 1 / -1;">
+                    <div class="sidebar-header">
+                      <h4>Operating System, Clean Wipe &amp; Display Panel Telemetry</h4>
+                      <span id="refurbishVerdictBadge" class="badge status-passed">OS METADATA VERIFIED</span>
+                    </div>
+                    <table class="table table-sm">
+                      <tbody id="expertOsRefurbishTable"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -339,17 +394,82 @@
       </section>
 
       <!-- ============================================================== -->
-      <!-- TAB 2: INTERACTIVE HARDWARE DIAGNOSTIC TOOLS                   -->
+      <!-- TAB 2: PORTS & CONNECTORS HARDWARE STATION                     -->
       <!-- ============================================================== -->
-      <section id="tab-tools" class="tab-pane" role="tabpanel">
-        <div class="tools-grid">
-          <!-- Tool 1: Dead Pixel Screen Tester -->
+      <section id="tab-ports" class="tab-pane" role="tabpanel">
+        <div class="ports-container">
+          <div class="ports-summary-bar">
+            <div>
+              <h2>Physical Ports &amp; Connectors Station</h2>
+              <p class="text-muted" style="margin-bottom:0;">Live real-time monitoring of USB-A/C ports, external HDMI video, and AC charger connectivity.</p>
+            </div>
+            <div class="ports-stats">
+              <div class="port-stat-item">
+                <span class="port-stat-num" id="portUsbCount">0</span>
+                <span class="port-stat-label">USB Devices</span>
+              </div>
+              <div class="port-stat-item">
+                <span class="port-stat-num" id="portDisplayCount">0</span>
+                <span class="port-stat-label">Video Outputs</span>
+              </div>
+              <div class="port-stat-item">
+                <span class="port-stat-num" id="portVerifiedCount">0</span>
+                <span class="port-stat-label">Verified Ports</span>
+              </div>
+              <button type="button" id="refreshPortsBtn" class="btn btn-sm btn-outline">⚡ Poll Ports</button>
+            </div>
+          </div>
+
+          <div id="portLiveAlert" class="port-alert-banner">
+            <span>💡 <strong>Live Port Test:</strong> Plug a USB drive, mouse, or HDMI cable into any laptop port. The port will automatically highlight in green with speed and vendor verification!</span>
+          </div>
+
+          <!-- Section 1: USB Ports -->
+          <div class="card-box">
+            <div class="sidebar-header">
+              <h3>USB-A &amp; USB-C Physical Ports</h3>
+              <span class="badge status-passed">Auto-Polling Active</span>
+            </div>
+            <p class="text-muted">Insert a USB device into each physical port around the laptop chassis to verify power delivery and data lines.</p>
+            <div id="usbPortsList" class="ports-section-grid"></div>
+          </div>
+
+          <!-- Section 2: Video Outputs & HDMI -->
+          <div class="card-box">
+            <h3>External Video Outputs (HDMI &amp; DisplayPort)</h3>
+            <p class="text-muted">Plug an external monitor or projector into the HDMI/Type-C port to verify external video controller output.</p>
+            <div id="displayPortsList" class="ports-section-grid"></div>
+          </div>
+
+          <!-- Section 3: AC Charger & Network -->
+          <div class="ports-section-grid">
+            <div class="card-box" id="acChargingCard">
+              <h3>AC Power Adapter &amp; Charging Port</h3>
+              <p class="text-muted">Detects when the charging cable is connected and delivering current to the battery.</p>
+              <div id="acPortStatusBox" style="margin-top:0.75rem;"></div>
+            </div>
+
+            <div class="card-box" id="networkCard">
+              <h3>Network &amp; Wireless Hardware</h3>
+              <p class="text-muted">Wi-Fi interface chip and Bluetooth hardware controller status.</p>
+              <div id="networkStatusBox" style="margin-top:0.75rem;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 3: SCREEN & DISPLAY STUDIO                                 -->
+      <!-- ============================================================== -->
+      <section id="tab-screen" class="tab-pane" role="tabpanel">
+        <div class="screen-studio-grid">
+          <!-- Screen Tool 1: Dead Pixel Tester -->
           <div class="tool-card">
             <div class="tool-card-header">
               <div class="tool-icon">🖥️</div>
               <div>
-                <h3>Dead &amp; Stuck Pixel Screen Tester</h3>
-                <p class="text-muted">Cycle pure RGB, monochrome, and contrast panels to spot dead subpixels, pressure marks, and backlight bleed.</p>
+                <h3>Dead &amp; Stuck Pixel Color Cycler</h3>
+                <p class="text-muted">Cycles pure RGB, monochrome, and contrast panels to spot dead subpixels, pressure marks, and backlight bleed.</p>
               </div>
             </div>
 
@@ -369,13 +489,83 @@
             </button>
           </div>
 
-          <!-- Tool 2: Audio Frequency & Speaker Rattle Tester -->
+          <!-- Screen Tool 2: Grayscale Contrast & Dynamic Range -->
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <div class="tool-icon">🌓</div>
+              <div>
+                <h3>Contrast &amp; Grayscale Dynamic Range</h3>
+                <p class="text-muted">16-step grayscale ramp. Ensure every step from 0% pure black to 100% white is clearly distinguishable without crushed blacks or blown highlights.</p>
+              </div>
+            </div>
+
+            <div class="contrast-ramp-wrap">
+              <div class="contrast-step-bar" id="contrastStepBar"></div>
+            </div>
+
+            <div class="btn-group-row">
+              <button type="button" id="launchContrastFullscreenBtn" class="btn btn-outline flex-1">Fullscreen Contrast Test</button>
+            </div>
+          </div>
+
+          <!-- Screen Tool 3: Text Sharpness & 1px Grid -->
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <div class="tool-icon">🔍</div>
+              <div>
+                <h3>1px Text Sharpness &amp; Subpixel Grid</h3>
+                <p class="text-muted">Inspect subpixel alignment, optical sharpness, and scaling artifacts across fine fonts and a 1px checkerboard pattern.</p>
+              </div>
+            </div>
+
+            <div class="sharpness-preview-box">
+              <canvas id="checkerboardCanvas" class="pixel-grid-canvas"></canvas>
+              <div class="sharpness-samples">
+                <div style="font-size:7pt;">7pt: The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div style="font-size:9pt;">9pt: The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div style="font-size:11pt; font-weight:700;">11pt Bold: Clean typography indicates zero scaling distortion.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen Tool 4: UFO Motion Blur & Refresh Rate Benchmark -->
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <div class="tool-icon">🛸</div>
+              <div>
+                <h3>UFO Motion Blur &amp; Display Refresh Rate</h3>
+                <p class="text-muted">Live animation benchmark measuring exact display refresh rate (Hz), frame time jitter, and pixel response time ghosting.</p>
+              </div>
+            </div>
+
+            <div class="ufo-canvas-wrap">
+              <canvas id="ufoCanvas" class="ufo-canvas" width="400" height="120"></canvas>
+              <div class="ufo-stats-bar">
+                <span>Refresh Rate: <strong id="ufoHzText" class="ufo-hz-val">60.0 Hz</strong></span>
+                <span>Frame Time: <strong id="ufoFrameTimeText">16.6 ms</strong></span>
+                <span>Ghosting: <strong>Check trails</strong></span>
+              </div>
+            </div>
+
+            <div class="btn-group-row">
+              <button type="button" id="toggleUfoAnimBtn" class="btn btn-secondary flex-1">Pause Animation</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 4: AUDIO & CAMERA MEDIA LAB                                -->
+      <!-- ============================================================== -->
+      <section id="tab-media" class="tab-pane" role="tabpanel">
+        <div class="tools-grid">
+          <!-- Audio Frequency & Speaker Rattle Tester -->
           <div class="tool-card">
             <div class="tool-card-header">
               <div class="tool-icon">🔊</div>
               <div>
                 <h3>Speaker Rattle &amp; Frequency Sweep</h3>
-                <p class="text-muted">Generates pure sine wave sweeps (20Hz–10kHz) and stereo channel isolation to spot blown diaphragms and casing buzz.</p>
+                <p class="text-muted">Generates pure sine wave sweeps (20Hz–8000Hz) and stereo channel isolation to spot blown speaker diaphragms and chassis buzz.</p>
               </div>
             </div>
 
@@ -399,7 +589,7 @@
             </div>
           </div>
 
-          <!-- Tool 3: Webcam & Microphone Live Card -->
+          <!-- Webcam & Microphone Live Diagnostic -->
           <div class="tool-card">
             <div class="tool-card-header">
               <div class="tool-icon">📷</div>
@@ -421,53 +611,171 @@
 
             <div class="btn-group-row" style="margin-top: 0.75rem;">
               <button type="button" id="startMediaBtn" class="btn btn-primary flex-1">Start Camera &amp; Mic</button>
-              <button type="button" id="stopMediaBtn" class="btn btn-secondary flex-1" disabled>Stop</button>
+              <button type="button" id="stopMediaBtn" class="btn btn-secondary flex-1" disabled style="display:none;">Stop</button>
             </div>
-          </div>
-
-          <!-- Tool 4: Trackpad & Gesture Canvas -->
-          <div class="tool-card">
-            <div class="tool-card-header">
-              <div class="tool-icon">🖱️</div>
-              <div>
-                <h3>Trackpad &amp; Gesture Canvas</h3>
-                <p class="text-muted">Test multi-touch, smooth tracking, edge dead zones, and click responsiveness across the trackpad.</p>
-              </div>
-            </div>
-
-            <canvas id="trackpadCanvas" width="400" height="150" class="trackpad-canvas"></canvas>
-            <div class="trackpad-meta">
-              <span id="trackpadTouchCount">Fingers: 0</span>
-              <span id="trackpadLastEvent">Draw or click to test tracking</span>
-              <button type="button" id="clearCanvasBtn" class="btn btn-sm btn-outline">Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tool 5: Full Keyboard Matrix Tester (Full Width) -->
-        <div class="tool-card" style="margin-top: 1.5rem;">
-          <div class="kb-header">
-            <div>
-              <h3>Interactive Laptop Keyboard Matrix</h3>
-              <p class="text-muted">Press every key switch on the laptop keyboard. Functioning keys illuminate green and remain verified.</p>
-            </div>
-            <div class="kb-stats">
-              <span class="stat-num" id="kbVerifiedCount">0</span>
-              <span class="stat-label">Keys Verified</span>
-              <button type="button" id="kbResetBtn" class="btn btn-sm btn-outline">Reset Matrix</button>
-            </div>
-          </div>
-
-          <div id="lastKeyPressed" class="key-monitor">Press any key to begin verification...</div>
-
-          <div class="keyboard-wrapper">
-            <div id="virtualKeyboard" class="keyboard"></div>
           </div>
         </div>
       </section>
 
       <!-- ============================================================== -->
-      <!-- TAB 3: HISTORY                                                 -->
+      <!-- TAB 5: INPUT CONTROLS & TRACKPAD                               -->
+      <!-- ============================================================== -->
+      <section id="tab-input" class="tab-pane" role="tabpanel">
+        <div class="tools-grid">
+          <!-- Trackpad & Gesture Canvas -->
+          <div class="tool-card" style="grid-column: 1 / -1;">
+            <div class="tool-card-header">
+              <div class="tool-icon">🖱️</div>
+              <div>
+                <h3>Trackpad &amp; Multi-Touch Gesture Canvas</h3>
+                <p class="text-muted">Test multi-touch, smooth tracking, edge dead zones, 2-finger scroll, and click responsiveness across the trackpad.</p>
+              </div>
+            </div>
+
+            <canvas id="trackpadCanvas" width="800" height="180" class="trackpad-canvas" style="width:100%; height:180px;"></canvas>
+            <div class="trackpad-meta">
+              <span id="trackpadTouchCount">Fingers: 0</span>
+              <span id="trackpadPressureText">Pressure: Normal</span>
+              <span id="trackpadLastEvent">Draw or click to test tracking</span>
+              <button type="button" id="clearCanvasBtn" class="btn btn-sm btn-outline">Clear Canvas</button>
+            </div>
+
+            <!-- Trackpad 9-Zone Sensitivity & Dead-Spot Map -->
+            <div class="trackpad-zones-wrap" style="margin-top: 0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <span style="font-size:0.8rem; font-weight:600;">Trackpad Zone Sensitivity &amp; Dead-Spot Map</span>
+                <span id="trackpadZonesScore" class="badge status-passed">0/9 Zones Active</span>
+              </div>
+              <div id="trackpadZoneGrid" class="trackpad-zone-grid">
+                <div class="zone-cell" data-zone="0">Top-Left<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="1">Top-Center<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="2">Top-Right<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="3">Mid-Left<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="4">Center<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="5">Mid-Right<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="6">Bottom-Left<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="7">Bottom-Center<br><span class="zone-hits">0 hits</span></div>
+                <div class="zone-cell" data-zone="8">Bottom-Right<br><span class="zone-hits">0 hits</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full Keyboard Matrix Tester -->
+          <div class="tool-card" style="grid-column: 1 / -1;">
+            <div class="kb-header">
+              <div>
+                <h3>Interactive Laptop Keyboard Matrix</h3>
+                <p class="text-muted">Press every key switch on the laptop keyboard. Functioning keys illuminate green and remain verified.</p>
+              </div>
+              <div class="kb-stats">
+                <span class="stat-num" id="kbVerifiedCount">0</span>
+                <span class="stat-label">Keys Verified</span>
+                <button type="button" id="kbResetBtn" class="btn btn-sm btn-outline">Reset Matrix</button>
+              </div>
+            </div>
+
+            <div class="kb-test-tips" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem; background:var(--bg-subtle); padding:0.5rem 0.75rem; border-radius:4px; border-left:3px solid var(--primary);">
+              💡 <strong>Switch Wiggle &amp; Chatter Test:</strong> Gently wiggle or tap suspected keys halfway down. If a switch chatters rapidly or bounces (&lt;35ms), it illuminates with a red pulse and logs below.
+            </div>
+
+            <div id="lastKeyPressed" class="key-monitor">Press any key to begin verification...</div>
+
+            <div class="keyboard-wrapper">
+              <div id="virtualKeyboard" class="keyboard"></div>
+            </div>
+
+            <!-- Keyboard Condition Heatmap Report -->
+            <div id="kbConditionReport" class="kb-condition-report" style="margin-top:0.75rem; padding:0.75rem; background:var(--card-bg); border-radius:6px; border:1px solid var(--border-color); font-size:0.82rem;">
+              <span class="text-muted">Press keys to build the condition heatmap. Bounce detection active.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 6: COOLING & PERFORMANCE BENCHMARK                         -->
+      <!-- ============================================================== -->
+      <section id="tab-benchmark" class="tab-pane" role="tabpanel">
+        <div class="benchmark-container">
+          <div class="card-box">
+            <h2>5-Second Bounded Thermal Pulse</h2>
+            <p class="text-muted">Safely spins a 5-second integer calculation to measure cooling fan response, thermal ramp rate (°C/sec), and throttle vulnerability.</p>
+
+            <div class="benchmark-meter-box">
+              <div class="pulse-temp-val" id="benchPeakTempVal">--°C</div>
+              <div class="pulse-temp-label">Peak Temperature During Pulse</div>
+            </div>
+
+            <button type="button" id="runPulseBtn" class="btn btn-primary btn-block">
+              🚀 Run 5-Second Thermal Pulse
+            </button>
+          </div>
+
+          <div class="card-box">
+            <h3>Thermal Dissipation Results</h3>
+            <p class="text-muted">Compares starting idle temperature to peak load temperature to evaluate thermal paste and heatsink condition.</p>
+
+            <div class="benchmark-results-grid">
+              <div class="bench-stat-card">
+                <div class="bench-stat-num" id="benchStartTemp">--°C</div>
+                <div class="bench-stat-label">Starting Idle Temp</div>
+              </div>
+              <div class="bench-stat-card">
+                <div class="bench-stat-num" id="benchRiseDelta">--°C</div>
+                <div class="bench-stat-label">Thermal Rise (Δ)</div>
+              </div>
+              <div class="bench-stat-card">
+                <div class="bench-stat-num" id="benchRampRate">-- °C/s</div>
+                <div class="bench-stat-label">Ramp Velocity</div>
+              </div>
+              <div class="bench-stat-card">
+                <div class="bench-stat-num" id="benchStatusBadge">Awaiting Run</div>
+                <div class="bench-stat-label">Cooling Verdict</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fan RPM Monitor -->
+          <div class="card-box">
+            <div class="sidebar-header">
+              <h3>Fan Speed Monitor (Live RPM)</h3>
+              <button type="button" id="refreshFansBtn" class="btn btn-sm btn-outline">↻ Refresh</button>
+            </div>
+            <p class="text-muted">Real-time fan RPM readings from hardware monitor sensors. Non-destructive — read-only sysfs.</p>
+            <div id="fanRpmList" style="margin-top:0.75rem; display:grid; gap:0.5rem;"></div>
+          </div>
+
+          <!-- ACPI Fan Acoustics & Profile Mode Control -->
+          <div class="card-box" id="fanProfileControlCard">
+            <div class="sidebar-header">
+              <h3>Fan Acoustics &amp; Speed Profile Test</h3>
+              <span id="currentFanProfileBadge" class="badge status-passed">Current: Balanced</span>
+            </div>
+            <p class="text-muted">Safely switch vendor ACPI cooling profiles to compare bearing acoustics between Whisper Mode (silent, low RPM) and Performance Mode (maximum speed &amp; airflow).</p>
+
+            <div class="btn-group-row" style="margin-top:0.75rem;">
+              <button type="button" id="btnFanPerformance" class="btn btn-primary flex-1">
+                🚀 Performance Mode (Max Fan)
+              </button>
+              <button type="button" id="btnFanQuiet" class="btn btn-secondary flex-1">
+                🤫 Whisper Mode (Quiet)
+              </button>
+              <button type="button" id="btnFanBalanced" class="btn btn-outline flex-1">
+                ⚖️ Balanced (Default)
+              </button>
+            </div>
+            <div id="fanProfileStatusMsg" class="text-muted" style="margin-top:0.5rem; font-size:0.8rem;">
+              Select a mode to test acoustic bearing response.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB-TOOLS ALIAS FOR COMPATIBILITY -->
+      <section id="tab-tools" class="tab-pane" role="tabpanel"></section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 7: HISTORY                                                 -->
       <!-- ============================================================== -->
       <section id="tab-history" class="tab-pane" role="tabpanel">
         <div class="card-box">
@@ -494,7 +802,7 @@
       </section>
 
       <!-- ============================================================== -->
-      <!-- TAB 4: ABOUT & DONATE                                          -->
+      <!-- TAB 8: ABOUT & DONATE                                          -->
       <!-- ============================================================== -->
       <section id="tab-about" class="tab-pane" role="tabpanel">
         <div class="about-grid">

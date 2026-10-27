@@ -64,7 +64,7 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
             self._send_json({
                 "status": "healthy",
                 "application": "Laptop Buyer Kit",
-                "version": "2.0.0",
+                "version": "2.1.0",
                 "offline_mode": True,
             })
             return
@@ -76,6 +76,51 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
                 self._send_json(specs)
             except Exception as exc:
                 self._send_error_json(f"Hardware probe failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/ports":
+            try:
+                collector = LinuxCollector()
+                ports = collector.collect_ports()
+                self._send_json(ports)
+            except Exception as exc:
+                self._send_error_json(f"Port query failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/network":
+            try:
+                collector = LinuxCollector()
+                net = collector.collect_network()
+                self._send_json(net)
+            except Exception as exc:
+                self._send_error_json(f"Network query failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/system/extended":
+            try:
+                collector = LinuxCollector()
+                sysext = collector.collect_system_extended()
+                self._send_json(sysext)
+            except Exception as exc:
+                self._send_error_json(f"System extended probe failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/fans":
+            try:
+                collector = LinuxCollector()
+                fans = collector.collect_fans()
+                self._send_json(fans)
+            except Exception as exc:
+                self._send_error_json(f"Fan query failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/fan/profiles":
+            try:
+                collector = LinuxCollector()
+                profiles = collector.get_fan_profiles()
+                self._send_json(profiles)
+            except Exception as exc:
+                self._send_error_json(f"Fan profile query failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
         if path == "/api/sessions":
@@ -142,6 +187,58 @@ class InspectorRequestHandler(SimpleHTTPRequestHandler):
         body = self._read_body_json()
         if body is None:
             self._send_error_json("Invalid JSON payload", HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/benchmark/cpu-pulse":
+            try:
+                import time, math
+                collector = LinuxCollector()
+                t_start = collector.collect_thermals()
+                initial_max = t_start.get("max_temp_c") if isinstance(t_start, dict) else 45.0
+                if initial_max is None:
+                    initial_max = 45.0
+
+                start_time = time.time()
+                iterations = 0
+                while time.time() - start_time < 5.0:
+                    for _ in range(50000):
+                        math.sqrt(12345.6789)
+                    iterations += 50000
+
+                t_end = collector.collect_thermals()
+                peak_max = t_end.get("max_temp_c") if isinstance(t_end, dict) else (initial_max or 50.0)
+                if peak_max is None:
+                    peak_max = initial_max
+                rise = max(0.0, round(peak_max - initial_max, 1))
+
+                self._send_json({
+                    "duration_seconds": 5.0,
+                    "initial_temp_c": initial_max,
+                    "peak_temp_c": peak_max,
+                    "temp_rise_c": rise,
+                    "thermal_ramp_rate": round(rise / 5.0, 2),
+                    "throttle_detected": peak_max >= 95.0,
+                    "status": "PASS — Normal Cooling Dissipation" if peak_max < 90 else "WARNING — High Thermal Rise",
+                    "iterations_completed": iterations,
+                })
+            except Exception as exc:
+                self._send_error_json(f"Thermal pulse failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/fan/profile":
+            profile = body.get("profile")
+            if not profile or not isinstance(profile, str):
+                self._send_error_json("Payload must contain a string 'profile'", HTTPStatus.BAD_REQUEST)
+                return
+            try:
+                collector = LinuxCollector()
+                res = collector.set_fan_profile(profile)
+                if res.get("success"):
+                    self._send_json(res)
+                else:
+                    self._send_error_json(res.get("error", "Failed to switch fan profile"), HTTPStatus.BAD_REQUEST)
+            except Exception as exc:
+                self._send_error_json(f"Fan profile switch failed: {exc}", HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
         if path == "/api/inspect/live":

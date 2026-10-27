@@ -1,5 +1,5 @@
 /**
- * Aegis Laptop Diagnostics (Laptop Buyer Kit v2.0)
+ * Aegis Laptop Diagnostics (Laptop Buyer Kit v2.1)
  * 100% offline, local browser orchestration.
  * Zero external CDNs, zero telemetry, full privacy.
  */
@@ -158,6 +158,7 @@ class App {
     this.bindEvents();
     this.buildKeyboard();
     this.initTrackpadCanvas();
+    this.initKeyboardHeatmap();
     this.loadHistory();
   }
 
@@ -299,11 +300,7 @@ class App {
     this.bindMediaEvents();
   }
 
-  switchTab(tabId) {
-    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
-    document.querySelectorAll(".tab-pane").forEach(p => p.classList.toggle("active", p.id === tabId));
-    if (tabId === "tab-history") this.loadHistory();
-  }
+  // switchTab is defined further below with full tab-switch side-effects.
 
   switchSubtab(subtabId) {
     document.querySelectorAll(".subnav-btn").forEach(b => b.classList.toggle("active", b.dataset.subtab === subtabId));
@@ -346,6 +343,35 @@ class App {
       }
       if (data.display && data.display.resolution) {
         document.getElementById("claimDisplay").value = data.display.resolution;
+      }
+
+      // Populate Host Environment Banner
+      const banner = document.getElementById("hostMetaBanner");
+      if (banner && data.system_extended) {
+        const ext = data.system_extended;
+        const osVal = document.getElementById("hostOsVal");
+        const bootVal = document.getElementById("hostBootVal");
+        const dispVal = document.getElementById("hostDisplayVal");
+        const instVal = document.getElementById("hostInstallVal");
+        const wipeTag = document.getElementById("hostWipeTag");
+
+        if (osVal) osVal.textContent = `${ext.os_name || 'Linux'} · ${ext.cpu_arch || 'x86_64'}`;
+        if (bootVal) bootVal.textContent = `${ext.boot_firmware || 'UEFI'} · ${ext.partition_table || 'GPT'}`;
+        if (dispVal) {
+          const pType = data.display?.edid?.is_oled ? 'OLED' : (data.display?.edid?.panel_type || 'IPS/LCD');
+          dispVal.textContent = `${pType} · ${ext.touchscreen_detected ? 'Touch' : 'Non-Touch'}`;
+        }
+        if (instVal) instVal.textContent = ext.os_install_age_estimate || 'Unknown';
+        if (wipeTag) {
+          if (ext.is_recent_wipe) {
+            wipeTag.className = "badge status-warning";
+            wipeTag.textContent = "RECENT WIPE";
+          } else {
+            wipeTag.className = "badge status-passed";
+            wipeTag.textContent = "ESTABLISHED";
+          }
+        }
+        banner.style.display = "block";
       }
 
       btn.innerText = "✓ Specs Detected!";
@@ -960,6 +986,44 @@ class App {
         <tr><td><strong>Display Connector</strong></td><td><code>${disp.connector || "eDP"} (${disp.resolution || "Native"})</code></td></tr>
       `;
     }
+
+    // 5. Operating System, Refurbish & Display Panel Telemetry
+    const osTable = document.getElementById("expertOsRefurbishTable");
+    const refurbishBadge = document.getElementById("refurbishVerdictBadge");
+    if (osTable) {
+      const sysExt = snapshot.system_extended || this.lastProbedSpecs?.system_extended || {};
+      const disp = snapshot.display || {};
+      const edid = disp.edid || {};
+
+      const isWipe = sysExt.is_recent_wipe === true;
+      if (refurbishBadge) {
+        if (isWipe) {
+          refurbishBadge.className = "badge status-warning";
+          refurbishBadge.textContent = "RECENT RESALE OS WIPE DETECTED";
+        } else if (sysExt.os_install_age_days) {
+          refurbishBadge.className = "badge status-passed";
+          refurbishBadge.textContent = `ESTABLISHED OS (${sysExt.os_install_age_days} DAYS RUNTIME)`;
+        } else {
+          refurbishBadge.className = "badge status-passed";
+          refurbishBadge.textContent = "OS METADATA VERIFIED";
+        }
+      }
+
+      const panelDesc = edid.manufacturer
+        ? `${edid.manufacturer} ${edid.model_name || ""} — ${edid.panel_type || "LCD"} (${edid.color_depth || "8-bit"}, ${edid.diagonal_inches || "?"}")`
+        : (disp.panel_type || (disp.resolution ? `${disp.resolution} Panel` : "Standard Panel"));
+
+      osTable.innerHTML = `
+        <tr><td><strong>Operating System</strong></td><td><code>${sysExt.os_pretty_name || sysExt.os_name || "Linux"} (${sysExt.kernel_version || "Kernel"})</code></td></tr>
+        <tr><td><strong>CPU Architecture</strong></td><td><code>${sysExt.cpu_arch || "x86_64"} · ${sysExt.cpu_bits || 64}-bit Mode</code></td></tr>
+        <tr><td><strong>Boot Firmware Type</strong></td><td><span class="badge status-passed">${sysExt.boot_firmware || "UEFI"}</span></td></tr>
+        <tr><td><strong>Storage Partition Table</strong></td><td><code>${sysExt.partition_table || "GPT"} (Root: ${sysExt.root_fs_type || "ext4"}, ${sysExt.root_device || "auto"}, ${sysExt.root_size || ""})</code></td></tr>
+        <tr><td><strong>OS Install Date</strong></td><td><code>${sysExt.os_install_date || sysExt.os_install_age_estimate || "Unknown"} (${sysExt.os_install_source || "sysfs"})</code></td></tr>
+        <tr><td><strong>Refurbish / Wipe Status</strong></td><td><span class="badge status-${isWipe ? 'warning' : 'passed'}">${sysExt.refurbish_status || "Standard Installation"}</span></td></tr>
+        <tr><td><strong>Touchscreen Hardware</strong></td><td><code>${sysExt.touchscreen_detected ? "Touchscreen Enabled (" + (sysExt.touchscreen_device || "Capacitive") + ")" : "Non-Touch Screen"}</code></td></tr>
+        <tr><td><strong>Display Panel Technology</strong></td><td><code>${panelDesc}</code> ${edid.is_oled ? '<span class="badge status-passed" style="margin-left:6px;">OLED TRUE BLACK</span>' : ''}</td></tr>
+      `;
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -1253,6 +1317,7 @@ class App {
 
     const ctx = canvas.getContext("2d");
     const colors = ["#2563eb", "#059669", "#d97706", "#dc2626", "#8b5cf6", "#ec4899"];
+    this.trackpadZoneHits = new Array(9).fill(0);
 
     const getPos = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -1264,44 +1329,77 @@ class App {
       };
     };
 
-    const updateStatus = (text) => {
+    const updateZoneHit = (pos) => {
+      const col = Math.min(2, Math.max(0, Math.floor((pos.x / canvas.width) * 3)));
+      const row = Math.min(2, Math.max(0, Math.floor((pos.y / canvas.height) * 3)));
+      const zoneIdx = row * 3 + col;
+      this.trackpadZoneHits[zoneIdx] = (this.trackpadZoneHits[zoneIdx] || 0) + 1;
+
+      const cell = document.querySelector(`.zone-cell[data-zone="${zoneIdx}"]`);
+      if (cell) {
+        cell.classList.add("zone-active");
+        const hitsEl = cell.querySelector(".zone-hits");
+        if (hitsEl) hitsEl.textContent = `${this.trackpadZoneHits[zoneIdx]} hits`;
+      }
+
+      const activeCount = this.trackpadZoneHits.filter(h => h > 0).length;
+      const scoreEl = document.getElementById("trackpadZonesScore");
+      if (scoreEl) {
+        scoreEl.textContent = `${activeCount}/9 Zones Active`;
+        scoreEl.className = `badge status-${activeCount === 9 ? 'passed' : activeCount >= 5 ? 'warning' : 'inconclusive'}`;
+      }
+    };
+
+    const updateStatus = (text, pressure = 0) => {
       const lbl = document.getElementById("trackpadLastEvent");
       if (lbl) lbl.textContent = text;
       const fingers = document.getElementById("trackpadTouchCount");
       if (fingers) fingers.textContent = `Fingers: ${this.activePointers.size}`;
+      const pressureEl = document.getElementById("trackpadPressureText");
+      if (pressureEl) {
+        if (pressure > 0) {
+          pressureEl.textContent = `Pressure: ${Math.round(pressure * 100)}%`;
+        } else {
+          pressureEl.textContent = `Pressure: Standard Multi-touch`;
+        }
+      }
     };
 
     canvas.addEventListener("pointerdown", (e) => {
       canvas.setPointerCapture(e.pointerId);
       const pos = getPos(e);
       const color = colors[e.pointerId % colors.length];
+      const radius = e.pressure && e.pressure > 0 ? Math.max(4, Math.round(6 + e.pressure * 14)) : 7;
       this.activePointers.set(e.pointerId, { lastX: pos.x, lastY: pos.y, color });
 
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
 
+      updateZoneHit(pos);
       const btnType = e.button === 0 ? "Left Click" : e.button === 2 ? "Right Click" : `Button ${e.button}`;
-      updateStatus(`${btnType} at (${Math.round(pos.x)}, ${Math.round(pos.y)})`);
+      updateStatus(`${btnType} at (${Math.round(pos.x)}, ${Math.round(pos.y)})`, e.pressure);
     });
 
     canvas.addEventListener("pointermove", (e) => {
       if (!this.activePointers.has(e.pointerId)) return;
       const prev = this.activePointers.get(e.pointerId);
       const pos = getPos(e);
+      const lineWidth = e.pressure && e.pressure > 0 ? Math.max(2, Math.round(2 + e.pressure * 8)) : 3;
 
       ctx.beginPath();
       ctx.moveTo(prev.lastX, prev.lastY);
       ctx.lineTo(pos.x, pos.y);
       ctx.strokeStyle = prev.color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = lineWidth;
       ctx.lineCap = "round";
       ctx.stroke();
 
       prev.lastX = pos.x;
       prev.lastY = pos.y;
-      updateStatus(`Tracking Finger #${e.pointerId} at (${Math.round(pos.x)}, ${Math.round(pos.y)})`);
+      updateZoneHit(pos);
+      updateStatus(`Tracking Finger #${e.pointerId} at (${Math.round(pos.x)}, ${Math.round(pos.y)})`, e.pressure);
     });
 
     const release = (e) => {
@@ -1311,7 +1409,7 @@ class App {
       try {
         canvas.releasePointerCapture(e.pointerId);
       } catch (_) {}
-      updateStatus(this.activePointers.size > 0 ? "Tracking..." : "Finger released");
+      updateStatus(this.activePointers.size > 0 ? "Tracking..." : "Finger released", 0);
     };
 
     canvas.addEventListener("pointerup", release);
@@ -1319,18 +1417,26 @@ class App {
 
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
-      updateStatus(`2-Finger Scroll Delta Y: ${Math.round(e.deltaY)}`);
+      updateStatus(`2-Finger Scroll Delta Y: ${Math.round(e.deltaY)}`, 0);
     }, { passive: false });
 
     canvas.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      updateStatus("Physical Right-Click Registered");
+      updateStatus("Physical Right-Click Registered", 0);
     });
 
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        updateStatus("Canvas cleared. Draw or click to test tracking");
+        this.trackpadZoneHits = new Array(9).fill(0);
+        document.querySelectorAll(".zone-cell").forEach((cell, idx) => {
+          cell.classList.remove("zone-active");
+          const h = cell.querySelector(".zone-hits");
+          if (h) h.textContent = "0 hits";
+        });
+        const scoreEl = document.getElementById("trackpadZonesScore");
+        if (scoreEl) scoreEl.textContent = "0/9 Zones Active";
+        updateStatus("Canvas cleared. Draw or click to test tracking", 0);
       });
     }
   }
@@ -1365,6 +1471,8 @@ class App {
       document.getElementById("kbVerifiedCount").innerText = this.verifiedKeys.size;
       document.getElementById("lastKeyPressed").innerText = `Last key pressed: ${e.key} (Code: ${e.code})`;
     }
+    // Record for heatmap tracking
+    this.recordKeyPressHeatmap(e.code);
   }
 
   handleGlobalKeyRelease(e) {
@@ -1416,6 +1524,524 @@ class App {
     const current = SCREEN_PALETTE[this.screenPaletteIndex];
     const overlay = document.getElementById("screenTestOverlay");
     overlay.style.backgroundColor = current.color;
+  }
+
+  // --------------------------------------------------------------------------
+  // Ports & Connectors Tab
+  // --------------------------------------------------------------------------
+  async loadPortsData() {
+    try {
+      const resp = await fetch("/api/ports");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+
+      // USB Devices
+      const usbList = document.getElementById("usbPortsList");
+      const usbDevices = data.usb_devices || [];
+      document.getElementById("portUsbCount").textContent = usbDevices.length;
+
+      if (usbList) {
+        if (usbDevices.length === 0) {
+          usbList.innerHTML = `<div class="port-card empty-port"><div class="port-icon">🔌</div><div><strong>No USB devices detected</strong><p class="text-muted">Plug in a USB drive or mouse to verify each port.</p></div></div>`;
+        } else {
+          usbList.innerHTML = usbDevices.map(d => `
+            <div class="port-card ${d.removable ? 'port-active' : ''}">
+              <div class="port-card-top">
+                <div class="port-icon">${d.removable ? '💾' : '🖱️'}</div>
+                <div>
+                  <strong>${d.product || "USB Device"}</strong>
+                  <div class="text-muted" style="font-size:0.8rem;">${d.manufacturer || "Unknown Vendor"}</div>
+                </div>
+                <span class="port-speed-pill">${d.speed_label || d.speed || "USB"}</span>
+              </div>
+              <div class="text-muted" style="font-size:0.75rem; margin-top:0.3rem;">Removable: ${d.removable ? "Yes" : "No"}</div>
+            </div>
+          `).join("");
+        }
+      }
+
+      // Display Connectors
+      const displayList = document.getElementById("displayPortsList");
+      const connectors = data.display_connectors || [];
+      document.getElementById("portDisplayCount").textContent = connectors.length;
+
+      if (displayList) {
+        if (connectors.length === 0) {
+          displayList.innerHTML = `<div class="port-card"><div class="port-icon">🖥️</div><div><strong>No video outputs enumerated</strong></div></div>`;
+        } else {
+          displayList.innerHTML = connectors.map(c => `
+            <div class="port-card ${c.status === 'connected' ? 'port-active' : ''}">
+              <div class="port-card-top">
+                <div class="port-icon">${c.name && c.name.toLowerCase().includes("edp") ? '💻' : '🖥️'}</div>
+                <div>
+                  <strong>${c.name || "Video Output"}</strong>
+                  <div class="text-muted" style="font-size:0.8rem;">Status: ${c.status || "Unknown"}</div>
+                </div>
+                <span class="port-speed-pill ${c.status === 'connected' ? 'pill-green' : ''}">${c.status ? c.status.toUpperCase() : "?"}</span>
+              </div>
+              ${c.modes && c.modes.length ? `<div class="text-muted" style="font-size:0.75rem; margin-top:0.3rem;">Modes: ${c.modes.slice(0, 3).join(", ")}${c.modes.length > 3 ? "..." : ""}</div>` : ""}
+            </div>
+          `).join("");
+        }
+      }
+
+      // AC Adapter
+      const acBox = document.getElementById("acPortStatusBox");
+      if (acBox && data.ac_adapter) {
+        const ac = data.ac_adapter;
+        const online = ac.online === true;
+        acBox.innerHTML = `
+          <div class="port-card ${online ? 'port-active' : ''}">
+            <div class="port-card-top">
+              <div class="port-icon">${online ? '⚡' : '🔋'}</div>
+              <div>
+                <strong>${ac.name || "AC Adapter"}</strong>
+                <div class="text-muted" style="font-size:0.8rem;">${online ? "Charger connected and delivering power" : "Running on battery power"}</div>
+              </div>
+              <span class="port-speed-pill ${online ? 'pill-green' : ''}">${online ? "CHARGING" : "BATTERY"}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Verified count (all with status)
+      const verified = usbDevices.length + connectors.filter(c => c.status).length;
+      const verifiedEl = document.getElementById("portVerifiedCount");
+      if (verifiedEl) verifiedEl.textContent = verified;
+
+    } catch (err) {
+      console.warn("Port data unavailable:", err);
+    }
+
+    // Network
+    try {
+      const nResp = await fetch("/api/network");
+      if (!nResp.ok) return;
+      const net = await nResp.json();
+      const netBox = document.getElementById("networkStatusBox");
+      if (!netBox) return;
+
+      const adapters = net.adapters || [];
+      if (adapters.length === 0) {
+        netBox.innerHTML = `<div class="port-card"><div class="port-icon">📡</div><div><strong>No network adapters detected</strong></div></div>`;
+      } else {
+        netBox.innerHTML = adapters.map(a => `
+          <div class="port-card ${a.operstate === 'up' ? 'port-active' : ''}">
+            <div class="port-card-top">
+              <div class="port-icon">${a.type === 'Wi-Fi' ? '📶' : '🔗'}</div>
+              <div>
+                <strong>${a.name}</strong>
+                <div class="text-muted" style="font-size:0.8rem;">${a.type || "Network"} · ${a.operstate || "Unknown"}</div>
+              </div>
+              <span class="port-speed-pill ${a.operstate === 'up' ? 'pill-green' : ''}">${(a.operstate || "DOWN").toUpperCase()}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+    } catch (_) {}
+  }
+
+  bindPortsEvents() {
+    const refreshBtn = document.getElementById("refreshPortsBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => this.loadPortsData());
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Screen Studio Tab
+  // --------------------------------------------------------------------------
+  initScreenStudio() {
+    this.drawContrastRamp();
+    this.drawCheckerboard();
+    if (!this.ufoRunning) {
+      this.startUfoAnimation();
+    }
+    const contrastBtn = document.getElementById("launchContrastFullscreenBtn");
+    if (contrastBtn && !contrastBtn._bound) {
+      contrastBtn._bound = true;
+      contrastBtn.addEventListener("click", () => this.launchContrastFullscreen());
+    }
+    const ufoToggleBtn = document.getElementById("toggleUfoAnimBtn");
+    if (ufoToggleBtn && !ufoToggleBtn._bound) {
+      ufoToggleBtn._bound = true;
+      ufoToggleBtn.addEventListener("click", () => {
+        if (this.ufoRunning) {
+          this.stopUfoAnimation();
+          ufoToggleBtn.textContent = "Resume Animation";
+        } else {
+          this.startUfoAnimation();
+          ufoToggleBtn.textContent = "Pause Animation";
+        }
+      });
+    }
+  }
+
+  drawContrastRamp() {
+    const bar = document.getElementById("contrastStepBar");
+    if (!bar) return;
+    bar.innerHTML = "";
+    const steps = 16;
+    for (let i = 0; i < steps; i++) {
+      const val = Math.round((i / (steps - 1)) * 255);
+      const div = document.createElement("div");
+      div.className = "contrast-step";
+      div.style.backgroundColor = `rgb(${val},${val},${val})`;
+      div.title = `L${Math.round((val / 255) * 100)}%`;
+      bar.appendChild(div);
+    }
+  }
+
+  drawCheckerboard() {
+    const canvas = document.getElementById("checkerboardCanvas");
+    if (!canvas) return;
+    canvas.width = 200;
+    canvas.height = 80;
+    const ctx = canvas.getContext("2d");
+    const cellSize = 4;
+    for (let y = 0; y < canvas.height; y += cellSize) {
+      for (let x = 0; x < canvas.width; x += cellSize) {
+        ctx.fillStyle = (Math.floor(x / cellSize) + Math.floor(y / cellSize)) % 2 === 0 ? "#000" : "#fff";
+        ctx.fillRect(x, y, cellSize, cellSize);
+      }
+    }
+  }
+
+  launchContrastFullscreen() {
+    const steps = 16;
+    let idx = 0;
+    const overlay = document.getElementById("screenTestOverlay");
+    if (!overlay) return;
+    const val = Math.round((idx / (steps - 1)) * 255);
+    overlay.style.backgroundColor = `rgb(${val},${val},${val})`;
+    overlay.style.display = "flex";
+    const help = document.getElementById("screenTestHelp");
+    if (help) help.textContent = "Click / Space to step grayscale. ESC to exit.";
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    this._contrastIdx = 0;
+    this._contrastMode = true;
+    this._contrastSteps = steps;
+
+    overlay._contrastClick = () => {
+      this._contrastIdx = (this._contrastIdx + 1) % steps;
+      const v = Math.round((this._contrastIdx / (steps - 1)) * 255);
+      overlay.style.backgroundColor = `rgb(${v},${v},${v})`;
+    };
+    overlay.addEventListener("click", overlay._contrastClick);
+  }
+
+  // UFO Refresh Rate Animation
+  startUfoAnimation() {
+    const canvas = document.getElementById("ufoCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    this.ufoRunning = true;
+    this.ufoX = 0;
+    this.ufoDir = 1;
+    this.ufoFrameTimes = [];
+    this.ufoLastFrame = performance.now();
+
+    const animate = (now) => {
+      if (!this.ufoRunning) return;
+
+      const dt = now - this.ufoLastFrame;
+      this.ufoLastFrame = now;
+      this.ufoFrameTimes.push(dt);
+      if (this.ufoFrameTimes.length > 60) this.ufoFrameTimes.shift();
+
+      // Compute Hz
+      if (this.ufoFrameTimes.length > 5) {
+        const avgMs = this.ufoFrameTimes.reduce((a, b) => a + b, 0) / this.ufoFrameTimes.length;
+        const hz = avgMs > 0 ? (1000 / avgMs).toFixed(1) : "?";
+        const hzEl = document.getElementById("ufoHzText");
+        const ftEl = document.getElementById("ufoFrameTimeText");
+        if (hzEl) hzEl.textContent = `${hz} Hz`;
+        if (ftEl) ftEl.textContent = `${avgMs.toFixed(1)} ms`;
+      }
+
+      // Draw
+      const speed = 3;
+      this.ufoX += this.ufoDir * speed;
+      const w = canvas.width, h = canvas.height;
+      if (this.ufoX > w - 30) this.ufoDir = -1;
+      if (this.ufoX < 30) this.ufoDir = 1;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Trail effect
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      ctx.fillRect(0, 0, w, h);
+
+      // UFO body
+      ctx.beginPath();
+      ctx.ellipse(this.ufoX, h / 2, 28, 10, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#2563eb";
+      ctx.fill();
+
+      // Dome
+      ctx.beginPath();
+      ctx.ellipse(this.ufoX, h / 2 - 6, 14, 8, 0, 0, Math.PI, true);
+      ctx.fillStyle = "#60a5fa";
+      ctx.fill();
+
+      // Glow
+      const grd = ctx.createRadialGradient(this.ufoX, h / 2, 2, this.ufoX, h / 2, 28);
+      grd.addColorStop(0, "rgba(96,165,250,0.5)");
+      grd.addColorStop(1, "rgba(96,165,250,0)");
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.ellipse(this.ufoX, h / 2, 28, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      this.ufoAnimFrameId = requestAnimationFrame(animate);
+    };
+
+    this.ufoAnimFrameId = requestAnimationFrame(animate);
+  }
+
+  stopUfoAnimation() {
+    this.ufoRunning = false;
+    if (this.ufoAnimFrameId) {
+      cancelAnimationFrame(this.ufoAnimFrameId);
+      this.ufoAnimFrameId = null;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Cooling Pulse Benchmark
+  // --------------------------------------------------------------------------
+  bindBenchmarkEvents() {
+    const runBtn = document.getElementById("runPulseBtn");
+    if (runBtn && !runBtn._bound) {
+      runBtn._bound = true;
+      runBtn.addEventListener("click", () => this.runThermalPulse());
+    }
+    const refreshFansBtn = document.getElementById("refreshFansBtn");
+    if (refreshFansBtn && !refreshFansBtn._bound) {
+      refreshFansBtn._bound = true;
+      refreshFansBtn.addEventListener("click", () => this.loadFanRpms());
+    }
+
+    const btnPerf = document.getElementById("btnFanPerformance");
+    if (btnPerf && !btnPerf._bound) {
+      btnPerf._bound = true;
+      btnPerf.addEventListener("click", () => this.setFanProfile("performance"));
+    }
+    const btnQuiet = document.getElementById("btnFanQuiet");
+    if (btnQuiet && !btnQuiet._bound) {
+      btnQuiet._bound = true;
+      btnQuiet.addEventListener("click", () => this.setFanProfile("quiet"));
+    }
+    const btnBal = document.getElementById("btnFanBalanced");
+    if (btnBal && !btnBal._bound) {
+      btnBal._bound = true;
+      btnBal.addEventListener("click", () => this.setFanProfile("balanced"));
+    }
+
+    this.loadFanRpms();
+    this.loadFanProfileStatus();
+  }
+
+  async loadFanProfileStatus() {
+    const badge = document.getElementById("currentFanProfileBadge");
+    const msg = document.getElementById("fanProfileStatusMsg");
+    try {
+      const resp = await fetch("/api/fan/profiles");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (!data.supported) {
+        if (badge) badge.textContent = "ACPI Fan Profiles: N/A";
+        if (msg) msg.textContent = "ACPI thermal profile switching not supported on this firmware.";
+        return;
+      }
+      if (badge) {
+        badge.textContent = `Current: ${data.current.toUpperCase()}`;
+        badge.className = `badge status-${data.current === 'performance' ? 'critical' : data.current === 'quiet' ? 'passed' : 'passed'}`;
+      }
+      if (msg) {
+        msg.textContent = `Available firmware profiles: ${data.choices.join(', ')}.`;
+      }
+    } catch (_) {}
+  }
+
+  async setFanProfile(profile) {
+    const badge = document.getElementById("currentFanProfileBadge");
+    const msg = document.getElementById("fanProfileStatusMsg");
+    if (msg) msg.textContent = `Switching fan mode to '${profile}'...`;
+    try {
+      const resp = await fetch("/api/fan/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        if (badge) {
+          badge.textContent = `Current: ${profile.toUpperCase()}`;
+          badge.className = `badge status-${profile === 'performance' ? 'critical' : 'passed'}`;
+        }
+        if (msg) {
+          msg.innerHTML = `✅ Successfully switched to <strong>${profile.toUpperCase()}</strong> mode via ${data.method}. Notice fan acoustic and RPM response!`;
+        }
+        setTimeout(() => this.loadFanRpms(), 1200);
+      } else {
+        if (msg) msg.textContent = `Notice: ${data.error || "Profile switch error"}`;
+      }
+    } catch (err) {
+      if (msg) msg.textContent = `Failed: ${err.message}`;
+    }
+  }
+
+  async loadFanRpms() {
+    const list = document.getElementById("fanRpmList");
+    if (!list) return;
+    try {
+      const resp = await fetch("/api/fans");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      const fans = data.fans || [];
+      if (fans.length === 0) {
+        list.innerHTML = `<div class="text-muted" style="font-size:0.85rem;">No fan sensors detected via hwmon sysfs (may require hwmon driver or root for some chips).</div>`;
+        return;
+      }
+      list.innerHTML = fans.map(f => `
+        <div class="port-card ${f.rpm > 0 ? 'port-active' : ''}">
+          <div class="port-card-top">
+            <div class="port-icon">${f.rpm > 0 ? '🌀' : '💤'}</div>
+            <div>
+              <strong>${f.label}</strong>
+              <div class="text-muted" style="font-size:0.8rem;">${f.hwmon}</div>
+            </div>
+            <span class="port-speed-pill ${f.rpm > 0 ? 'pill-green' : ''}">${f.rpm} RPM</span>
+          </div>
+        </div>
+      `).join("");
+    } catch (err) {
+      if (list) list.innerHTML = `<div class="text-muted" style="font-size:0.85rem;">Fan data unavailable: ${err.message}</div>`;
+    }
+  }
+
+  async runThermalPulse() {
+    const runBtn = document.getElementById("runPulseBtn");
+    if (!runBtn) return;
+    const origText = runBtn.innerHTML;
+    runBtn.disabled = true;
+    runBtn.innerHTML = "⏳ Running 5-second thermal pulse...";
+
+    const peakEl = document.getElementById("benchPeakTempVal");
+    const startEl = document.getElementById("benchStartTemp");
+    const deltaEl = document.getElementById("benchRiseDelta");
+    const rampEl = document.getElementById("benchRampRate");
+    const statusEl = document.getElementById("benchStatusBadge");
+
+    if (peakEl) peakEl.textContent = "...°C";
+
+    try {
+      const resp = await fetch("/api/benchmark/cpu-pulse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+      const d = await resp.json();
+
+      if (peakEl) peakEl.textContent = `${d.peak_temp_c ?? "--"}°C`;
+      if (startEl) startEl.textContent = `${d.initial_temp_c ?? "--"}°C`;
+      if (deltaEl) deltaEl.textContent = `+${d.temp_rise_c ?? "--"}°C`;
+      if (rampEl) rampEl.textContent = `${d.thermal_ramp_rate ?? "--"} °C/s`;
+
+      if (statusEl) {
+        const isThrottle = d.throttle_detected;
+        statusEl.textContent = isThrottle ? "⚠️ Throttling" : "✅ Healthy";
+        statusEl.style.color = isThrottle ? "var(--severity-critical)" : "var(--severity-passed)";
+      }
+    } catch (err) {
+      if (peakEl) peakEl.textContent = "Error";
+      if (statusEl) statusEl.textContent = "Failed: " + err.message;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.innerHTML = origText;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Keyboard Heatmap & Condition Metadata
+  // --------------------------------------------------------------------------
+  initKeyboardHeatmap() {
+    // keyPressCounts: code -> count
+    // keyBounceFlags: code -> boolean (bounce detected)
+    // keyLastTimestamp: code -> ms timestamp
+    this.keyPressCounts = this.keyPressCounts || {};
+    this.keyBounceFlags = this.keyBounceFlags || {};
+    this.keyLastTimestamp = this.keyLastTimestamp || {};
+  }
+
+  recordKeyPressHeatmap(code) {
+    const now = performance.now();
+    const prev = this.keyLastTimestamp[code] || 0;
+    const delta = now - prev;
+
+    this.keyPressCounts[code] = (this.keyPressCounts[code] || 0) + 1;
+    this.keyLastTimestamp[code] = now;
+
+    // Bounce detection: two presses < 30ms = contact bounce / mechanical fault
+    if (prev > 0 && delta < 30) {
+      this.keyBounceFlags[code] = true;
+    }
+
+    this.updateKeyHeatmapColor(code);
+    this.updateKeyConditionReport();
+  }
+
+  updateKeyHeatmapColor(code) {
+    const el = document.getElementById(`kb-${code}`);
+    if (!el) return;
+    const count = this.keyPressCounts[code] || 0;
+    const bounced = this.keyBounceFlags[code];
+
+    el.classList.remove("heat-cold", "heat-warm", "heat-hot", "heat-bounce");
+    if (bounced) {
+      el.classList.add("heat-bounce"); // Red-ish warning
+    } else if (count >= 20) {
+      el.classList.add("heat-hot");    // Green: well-tested
+    } else if (count >= 5) {
+      el.classList.add("heat-warm");   // Yellow: partially tested
+    } else if (count >= 1) {
+      el.classList.add("heat-cold");   // Light blue: rarely pressed
+    }
+  }
+
+  updateKeyConditionReport() {
+    const report = document.getElementById("kbConditionReport");
+    if (!report) return;
+    const issues = [];
+    for (const [code, bounced] of Object.entries(this.keyBounceFlags)) {
+      if (bounced) {
+        const count = this.keyPressCounts[code] || 0;
+        issues.push(`<span style="color:var(--severity-critical);">⚠ Key '${code}': ${count} presses, bounce detected — possibly worn switch</span>`);
+      }
+    }
+    if (issues.length === 0) {
+      report.innerHTML = `<span class="text-muted">No key condition issues detected. Press all keys thoroughly to build heatmap.</span>`;
+    } else {
+      report.innerHTML = issues.join("<br>");
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Tab Switch Enhanced (trigger side effects per tab)
+  // --------------------------------------------------------------------------
+  switchTab(tabId) {
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
+    document.querySelectorAll(".tab-pane").forEach(p => p.classList.toggle("active", p.id === tabId));
+
+    if (tabId === "tab-history") this.loadHistory();
+    if (tabId === "tab-ports") this.loadPortsData();
+    if (tabId === "tab-screen") this.initScreenStudio();
+    if (tabId === "tab-benchmark") { this.bindBenchmarkEvents(); this.loadFanRpms(); }
+    // tab-tools is the compatibility alias; nothing extra needed
   }
 
   // --------------------------------------------------------------------------

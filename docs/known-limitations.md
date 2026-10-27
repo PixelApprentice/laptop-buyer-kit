@@ -16,3 +16,32 @@ As of this starter pack:
 - CPU/GPU tests depend on available sensors and kernel/driver interfaces; a missing temperature sensor is inconclusive, not a cool temperature.
 - A completed benchmark does not establish long-term reliability or guarantee no intermittent fault exists.
 - The product should not include drive repair, data recovery or secure wipe in the default buyer workflow.
+
+## v2.1.0 additions and their known limitations
+
+### OS/Boot Detection
+- `collect_system_extended()` reads `/etc/os-release`, `/proc/mounts`, and `/sys/firmware/efi` (Linux only).
+- Boot firmware detection (UEFI vs BIOS/MBR) is based on presence of `/sys/firmware/efi/` directory — may be unavailable in some VM environments.
+- Filesystem type is read from `/proc/mounts` for the `/` mountpoint; encrypted or overlayfs roots may report a wrapper type.
+- OS install age estimate is based on `/etc/machine-id` mtime, which can be reset on re-install or cloning — treat as estimate only.
+- Touchscreen detection reads sysfs device names; some touch controllers enumerate with non-standard names.
+- Backlight type ("raw" = possible OLED hint, "firmware" = LCD) is an unreliable indicator; panel type should be confirmed via EDID or service manual.
+
+### Fan Monitoring
+- Fan RPM is read from hwmon sysfs (`/sys/class/hwmon/*/fan*_input`); some laptops require vendor kernel modules (e.g., `thinkpad_acpi`, `asus_wmi`) to expose these nodes.
+- No PWM fan control write operations are performed — Aegis is read-only. Max-speed and whisper-mode tests are therefore advisory (measuring current RPM only).
+- Fan count 0 may mean sensors are hidden behind a locked EC, not that the fan is absent.
+
+### Keyboard Heatmap
+- Key bounce detection uses a 30ms threshold, which may trigger false positives on rapid typists and false negatives on mechanically defective switches.
+- Heatmap resets on page reload; there is no persistence across sessions.
+
+### USB Autorun (Windows)
+- `autorun.inf` is disabled by Windows Group Policy in most managed environments. AutoPlay only works from unlocked removable drives in consumer Windows 10/11.
+- The app requires Python 3.10+ on the target device; the batch file will fail if Python is absent.
+- UAC elevation (`requireAdministrator`) is requested but not guaranteed; some enterprise policies block it.
+- Windows Defender SmartScreen may warn about unsigned scripts — this is expected for open-source unsigned tools. The app contains no obfuscated code.
+
+### Performance on Low-End Hardware
+- The 5-second thermal pulse benchmark (`/api/benchmark/cpu-pulse`) uses pure Python math; actual CPU load and thermal rise depends on process priority and existing load.
+- The UFO canvas animation rate depends on browser compositor frame rate; headless or power-saving mode may reduce the reported Hz.

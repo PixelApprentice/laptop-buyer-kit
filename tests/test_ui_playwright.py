@@ -48,7 +48,9 @@ class UITestsPlaywright(unittest.TestCase):
         # Check brand and navigation tabs
         self.assertTrue(self.page.locator(".brand-title").is_visible())
         self.assertTrue(self.page.locator("button[data-tab='tab-inspect']").is_visible())
-        self.assertTrue(self.page.locator("button[data-tab='tab-tools']").is_visible())
+        # New tab structure: tab-tools is hidden alias; check real tabs instead
+        self.assertTrue(self.page.locator("button[data-tab='tab-ports']").is_visible())
+        self.assertTrue(self.page.locator("button[data-tab='tab-screen']").is_visible())
         self.assertTrue(self.page.locator("button[data-tab='tab-history']").is_visible())
         self.assertTrue(self.page.locator("button[data-tab='tab-about']").is_visible())
         self.assertTrue(self.page.locator(".mode-switch-wrapper").is_visible())
@@ -77,7 +79,8 @@ class UITestsPlaywright(unittest.TestCase):
 
         # Click Auto-Detect Specs
         self.page.click("#autoDetectBtn")
-        self.page.wait_for_timeout(500)
+        # Wait up to 8 seconds for probe to complete and populate field
+        self.page.wait_for_function("document.getElementById('claimRam').value.length > 0", timeout=8000)
 
         # Confirm RAM input or Model input was populated by local probe
         ram_val = self.page.locator("#claimRam").input_value()
@@ -156,15 +159,14 @@ class UITestsPlaywright(unittest.TestCase):
         self.assertGreater(self.page.locator("#expertBatteryTable tr").count(), 0)
         self.assertGreater(self.page.locator("#expertStorageTable tr").count(), 0)
         self.assertGreater(self.page.locator("#expertSystemTable tr").count(), 0)
+        self.assertGreater(self.page.locator("#expertOsRefurbishTable tr").count(), 0)
 
     def test_interactive_tools_suite(self):
         self.page.goto(f"http://{TEST_HOST}:{TEST_PORT}")
 
-        # Switch to Interactive Tools tab
-        self.page.click("button[data-tab='tab-tools']")
-        self.page.wait_for_selector("#tab-tools", state="visible")
-
-        # 1. Screen Pixel Tester launch & escape
+        # 1. Screen Pixel Tester: navigate to Screen Studio tab
+        self.page.click("button[data-tab='tab-screen']")
+        self.page.wait_for_selector("#tab-screen", state="visible")
         self.page.click("#launchScreenTestBtn")
         self.page.wait_for_selector("#screenTestOverlay", state="visible")
         self.page.click("#screenTestOverlay")
@@ -172,7 +174,9 @@ class UITestsPlaywright(unittest.TestCase):
         self.page.wait_for_timeout(200)
         self.assertFalse(self.page.locator("#screenTestOverlay").is_visible())
 
-        # 2. Audio Tester Controls
+        # 2. Audio Tester Controls: navigate to Audio & Camera tab
+        self.page.click("button[data-tab='tab-media']")
+        self.page.wait_for_selector("#tab-media", state="visible")
         freq_val = self.page.locator("#audioFreqVal").inner_text()
         self.assertIn("Hz", freq_val)
         self.page.click("#playToneBtn")
@@ -182,7 +186,9 @@ class UITestsPlaywright(unittest.TestCase):
         self.page.wait_for_timeout(100)
         self.assertEqual(self.page.locator("#playToneBtn").inner_text(), "Play Tone")
 
-        # 3. Trackpad Canvas
+        # 3. Trackpad Canvas: navigate to Input & Trackpad tab
+        self.page.click("button[data-tab='tab-input']")
+        self.page.wait_for_selector("#tab-input", state="visible")
         canvas = self.page.locator("#trackpadCanvas")
         self.assertTrue(canvas.is_visible())
         canvas.scroll_into_view_if_needed()
@@ -191,7 +197,7 @@ class UITestsPlaywright(unittest.TestCase):
         event_text = self.page.locator("#trackpadLastEvent").inner_text()
         self.assertTrue(any(term in event_text for term in ["at", "Click", "Tracking", "Finger"]))
 
-        # 4. Keyboard Matrix Tester
+        # 4. Keyboard Matrix Tester (also on tab-input)
         self.page.keyboard.press("KeyA")
         self.page.keyboard.press("KeyS")
         self.page.keyboard.press("Space")
@@ -221,3 +227,37 @@ class UITestsPlaywright(unittest.TestCase):
         self.page.wait_for_selector("#tab-about", state="visible")
         self.assertTrue(self.page.locator(".donate-options").is_visible())
         self.assertTrue(self.page.locator(".crypto-box").is_visible())
+
+    def test_screen_studio_and_contrast_ramp(self):
+        self.page.goto(f"http://{TEST_HOST}:{TEST_PORT}")
+
+        # Navigate to Screen Studio tab
+        self.page.click("button[data-tab='tab-screen']")
+        self.page.wait_for_selector("#tab-screen", state="visible")
+
+        # Contrast steps exist
+        self.page.wait_for_selector(".contrast-step", state="visible")
+        self.assertEqual(self.page.locator(".contrast-step").count(), 16)
+
+        # Sharpness checkerboard canvas exists
+        self.assertTrue(self.page.locator("#checkerboardCanvas").is_visible())
+
+        # UFO animation canvas exists
+        self.assertTrue(self.page.locator("#ufoCanvas").is_visible())
+        self.assertTrue(self.page.locator("#ufoHzText").is_visible())
+
+    def test_ports_and_cooling_pulse_tabs(self):
+        self.page.goto(f"http://{TEST_HOST}:{TEST_PORT}")
+
+        # Navigate to Ports tab
+        self.page.click("button[data-tab='tab-ports']")
+        self.page.wait_for_selector("#tab-ports", state="visible")
+        self.assertTrue(self.page.locator("#usbPortsList").is_visible())
+        self.assertTrue(self.page.locator("#refreshPortsBtn").is_visible())
+
+        # Navigate to Cooling Pulse tab
+        self.page.click("button[data-tab='tab-benchmark']")
+        self.page.wait_for_selector("#tab-benchmark", state="visible")
+        self.assertTrue(self.page.locator("#runPulseBtn").is_visible())
+        self.assertTrue(self.page.locator("#refreshFansBtn").is_visible())
+        self.assertTrue(self.page.locator("#btnFanPerformance").is_visible())

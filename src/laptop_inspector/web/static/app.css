@@ -1088,3 +1088,476 @@ input:checked + .slider:before {
     box-shadow: none !important;
   }
 }
+
+
+/* ========================================================================== */
+/* PORTS & CONNECTORS STATION                                                 */
+/* ========================================================================== */
+.ports-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ports-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ports-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.port-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.port-stat-num {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.port-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.port-alert-banner {
+  background-color: var(--primary-subtle);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+.ports-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.port-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.port-card.active-port {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+}
+
+.port-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.port-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+.port-card-body h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.port-card-detail {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.port-speed-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  background-color: var(--bg-subtle);
+  border-radius: 4px;
+  color: var(--primary);
+  margin-top: 0.35rem;
+}
+
+/* ========================================================================== */
+/* SCREEN & DISPLAY STUDIO                                                    */
+/* ========================================================================== */
+.screen-studio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .screen-studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contrast-ramp-wrap {
+  margin: 1rem 0;
+  background-color: #000;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.contrast-step-bar {
+  display: flex;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.contrast-step {
+  flex: 1;
+  height: 100%;
+}
+
+.sharpness-preview-box {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pixel-grid-canvas {
+  width: 100%;
+  height: 60px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.sharpness-samples {
+  font-family: serif;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.ufo-canvas-wrap {
+  margin: 1rem 0;
+  background-color: #0c1222;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.ufo-canvas {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+.ufo-stats-bar {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.6rem;
+  background-color: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.ufo-hz-val {
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+/* ========================================================================== */
+/* COOLING & CPU THERMAL BENCHMARK                                            */
+/* ========================================================================== */
+.benchmark-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 840px) {
+  .benchmark-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.benchmark-meter-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.pulse-temp-val {
+  font-family: var(--font-mono);
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.pulse-temp-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.benchmark-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.bench-stat-card {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  text-align: center;
+}
+
+.bench-stat-num {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.bench-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Keyboard Heatmap Colors (v2.1)
+   ============================================================ */
+.key.heat-cold {
+  background-color: #1e3a5f;
+  border-color: #2563eb;
+  color: #93c5fd;
+}
+
+.key.heat-warm {
+  background-color: #78350f;
+  border-color: #d97706;
+  color: #fcd34d;
+}
+
+.key.heat-hot {
+  background-color: #14532d;
+  border-color: #059669;
+  color: #6ee7b7;
+}
+
+.key.heat-bounce {
+  background-color: #7f1d1d;
+  border-color: #dc2626;
+  color: #fca5a5;
+  animation: bounce-pulse 1.5s infinite;
+}
+
+@keyframes bounce-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.4); }
+}
+
+/* ============================================================
+   Port Card States (v2.1)
+   ============================================================ */
+.port-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.port-card.port-active {
+  border-color: var(--severity-passed);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+}
+
+.port-card.empty-port {
+  opacity: 0.65;
+  border-style: dashed;
+}
+
+.port-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.port-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.port-speed-pill {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+}
+
+.port-speed-pill.pill-green {
+  background: rgba(5, 150, 105, 0.15);
+  border-color: var(--severity-passed);
+  color: var(--severity-passed);
+}
+
+.ports-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* ============================================================
+   Contrast Ramp Steps (v2.1)
+   ============================================================ */
+.contrast-step {
+  flex: 1;
+  height: 100%;
+  min-height: 56px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.contrast-step:hover {
+  transform: scaleY(1.05);
+}
+
+/* ============================================================
+   Trackpad 9-Zone Sensitivity & Weakpoint Map (v2.1)
+   ============================================================ */
+.trackpad-zones-wrap {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+.trackpad-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.zone-cell {
+  background: var(--card-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.zone-cell.zone-active {
+  border-style: solid;
+  border-color: var(--severity-passed);
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--severity-passed);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+}
+
+.zone-cell.zone-active .zone-hits {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.zone-hits {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   High-Tech Badge & Telemetry Polish (v2.1)
+   ============================================================ */
+.host-meta-banner {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.host-meta-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.host-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.4rem;
+  font-size: 0.76rem;
+}
+
+.host-meta-item strong {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.host-meta-item span {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}

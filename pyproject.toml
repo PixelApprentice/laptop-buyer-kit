@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laptop-buyer-kit"
-version = "2.0.0"
+version = "2.1.0"
 description = "Offline-first laptop hardware diagnostics, discrepancy detection, and used-buyer assurance"
 readme = "README.md"
 requires-python = ">=3.10"

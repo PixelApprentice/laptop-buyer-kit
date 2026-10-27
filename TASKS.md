@@ -61,3 +61,22 @@ Use this as the source-of-truth task list when working with Antigravity. Mark it
 - [x] Version 2.0.0: Interactive testing suite (Dead pixel tester, Audio sweep, Webcam & mic diagnostic, Trackpad canvas, Keyboard visualizer).
 - [x] Version 2.0.0: Full Playwright test coverage (52 tests all passing).
 - [x] Version 2.0.0: Release tag `v2.0.0` and GitHub issue #5 resolved.
+
+## Phase 6 — v2.1.0 extended hardware suite
+
+- [x] OS/Boot detection: UEFI vs BIOS/MBR, CPU arch (x86_64/ARM/32/64-bit), root filesystem type, OS pretty name, kernel version.
+- [x] OS install age estimate: based on /etc/machine-id mtime (best-effort, no PII).
+- [x] Touchscreen detection: sysfs input device name scan.
+- [x] Backlight type detection: "raw" (OLED hint) vs "firmware" (LCD).
+- [x] Fan RPM monitoring: non-destructive hwmon sysfs read; `/api/fans` endpoint.
+- [x] Fan RPM display in Cooling Pulse tab with live refresh.
+- [x] Ports & Connectors tab: USB device list, HDMI/DP connectors, AC charging status, network adapters.
+- [x] Screen Studio tab: Contrast ramp (16-step grayscale), 1px checkerboard sharpness, UFO refresh-rate animation.
+- [x] Keyboard heatmap: press-count color coding, 30ms bounce detection, condition report per key.
+- [x] Keyboard condition report div with real-time bounce warning.
+- [x] USB portable mode: autorun.inf, start-aegis.bat, start-aegis.manifest (UAC elevation request).
+- [x] /api/system/extended endpoint for OS/boot metadata.
+- [x] 58 tests all passing (19 collector, 32 unit analysis, 7 Playwright E2E).
+- [ ] Code signing for Windows (requires EV certificate — future work).
+- [ ] EDID panel type lookup (OLED/IPS/TN/VA) from binary EDID — future work.
+- [ ] Fan speed control (max/whisper mode) — requires root + fancontrol; advisory-only for now.

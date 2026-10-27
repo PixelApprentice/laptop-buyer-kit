@@ -1,4 +1,4 @@
-# Aegis Laptop Diagnostics (Laptop Buyer Kit v2.0)
+# Aegis Laptop Diagnostics (Laptop Buyer Kit v2.1)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/PixelApprentice/laptop-buyer-kit/master/examples/banner.svg" alt="Aegis Laptop Diagnostics Banner" width="100%" onerror="this.style.display='none'"/>
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/PixelApprentice/laptop-buyer-kit/actions"><img src="https://img.shields.io/badge/tests-52%20passed-success?style=flat-square" alt="Tests"></a>
-  <a href="https://github.com/PixelApprentice/laptop-buyer-kit/releases"><img src="https://img.shields.io/badge/version-2.0.0-blue?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/PixelApprentice/laptop-buyer-kit/actions"><img src="https://img.shields.io/badge/tests-65%20passed-success?style=flat-square" alt="Tests"></a>
+  <a href="https://github.com/PixelApprentice/laptop-buyer-kit/releases"><img src="https://img.shields.io/badge/version-2.1.0-blue?style=flat-square" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue?style=flat-square" alt="Python"></a>
   <a href="#zero-trust-offline-architecture"><img src="https://img.shields.io/badge/telemetry-0%25%20(100%25%20offline)-orange?style=flat-square" alt="Offline"></a>
@@ -29,58 +29,68 @@ Most diagnostic tools suffer from critical drawbacks:
 - **Aggressive accusations:** Flag legitimate replacement parts or firmware quirks as "fraud" without presenting verifiable evidence.
 - **Missing coverage transparency:** Assume that if a sensor didn't report an alarm, the hardware passed.
 
-**Aegis (Laptop Buyer Kit v2.0)** is built from the ground up to solve these problems. It is **100% offline**, **read-only**, **evidence-backed**, and features a modern cybernetic interface with **Normal Mode** for casual buyers and **Expert Mode** for deep technical diagnostics.
+**Aegis (Laptop Buyer Kit v2.1)** is built from the ground up to solve these problems. It is **100% offline**, **read-only**, **evidence-backed**, and features a modern cybernetic interface with **Normal Mode** for casual buyers and **Expert Mode** for deep technical diagnostics.
 
 ---
 
-## 🚀 Key Features in Version 2.0
+## 🚀 Key Features in Version 2.1
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   AEGIS LAPTOP DIAGNOSTICS v2.0.0                      │
+│                   AEGIS LAPTOP DIAGNOSTICS v2.1.0                      │
 │                                                                        │
-│   [1. Auto-Detection Engine]       [2. Dual Normal / Expert Modes]     │
-│   • Instant hardware register probe• Normal mode for casual buyers     │
-│   • Seller claim vs detected table • Expert mode: thermals & registers │
-│   • Radial battery & NVMe gauges   • Custom degradation thresholds     │
+│   [1. OS & Clean-Wipe Detection]   [2. Display Panel & EDID Parsing]   │
+│   • UEFI vs BIOS/MBR boot type     • OLED/AMOLED vs IPS/TN panel type  │
+│   • GPT partition table & root fs  • Color depth (10-bit HDR) & size   │
+│   • CPU arch (x86_64/ARM/32/64)    • Touchscreen hardware detection    │
+│   • Resale clean-wipe detection    • Contrast ramp & UFO Hz benchmark  │
 │                                                                        │
-│   [3. Interactive Diagnostic Suite][4. Provenance & Offline Storage]   │
-│   • Dead pixel RGB screen cycler   • 100% offline SQLite archive       │
-│   • Audio frequency sweep (20-8kHz)• Zero external CDNs / tracking     │
-│   • Webcam & live mic dB analyzer  • Instant HTML, JSON & Print export │
-│   • Trackpad gesture drawing canvas│                                   │
-│   • Interactive keyboard visualizer│                                   │
+│   [3. Input Stress & Weakpoints]   [4. Cooling & Fan Profiles]         │
+│   • Trackpad 9-zone sensitivity map• ACPI profile: Whisper vs Max Speed│
+│   • Real-time pointer pressure API • Live fan RPM monitoring (hwmon)   │
+│   • Switch chatter & bounce (<35ms)• 5s bounded thermal dissipation    │
+│   • Keyboard condition heatmap     • Throttle velocity & delta rise    │
+│                                                                        │
+│   [5. Ports & Connectors Station]  [6. USB Portable / Autorun Mode]    │
+│   • USB-A / Type-C speed & vendor  • Windows autorun.inf & batch run   │
+│   • HDMI & DisplayPort outputs     • UAC elevation manifest (.manifest)│
+│   • AC adapter charging detection  • 100% offline SQLite & HTML export │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1. ⚡ Local Hardware Auto-Detection Engine
-- Instantly probes host hardware registers via `/api/probe` with a single click.
-- Extracts vendor, model, physical RAM GiB, storage disk capacity, CPU model, GPU controller, and native display resolution without manual typing.
-- Auto-populates the **Claim Comparison Matrix** to immediately detect seller listing discrepancies.
+### 1. ⚡ OS, Boot Architecture & Resale Clean-Wipe Detection
+- **Boot & Architecture:** Detects UEFI vs. legacy BIOS/MBR, CPU architecture (x86_64, aarch64, i686) and 32-bit vs. 64-bit operating mode.
+- **Storage Partition Table & Filesystem:** Queries block devices for GPT vs. MBR partition table schemes and primary root filesystem types (ext4, btrfs, NTFS, exFAT).
+- **Clean OS Reinstall vs. Storage Runtime Discrepancy:** Inspects operating system installation timestamps (pacman.log, Debian/Ubuntu installer logs, `/etc/machine-id`) and reconciles against storage power-on hours to detect when a heavily used laptop was wiped right before being listed on the used marketplace.
 
-### 2. Normal Mode vs. Expert Mode
-- **Normal Mode:** Streamlined, buyer-oriented view presenting the overarching Hardware Assurance Verdict, visual health dials, and actionable recommendations.
-- **Expert Mode:**
-  - **Tuning Sliders:** Customize warning thresholds for battery degradation (10%–35%) and NVMe lifetime wear (50%–95%).
-  - **Package & Core Thermals:** Live CPU temperature display with throttle-risk triage.
-  - **Telemetry Grid:** Detailed low-level tables for CPU topology, battery ACPI registers, raw NVMe critical warning bitmasks, and motherboard/DRM display modes.
+### 2. 🖥️ Display Panel EDID Parsing & Touchscreen Detection
+- **Panel Technology Identification:** Direct binary EDID parser decoding manufacturer (Samsung Display, BOE, LG Display, AUO, Sharp), panel model, diagonal inches, and pixel color depth (6-bit, 8-bit, 10-bit).
+- **OLED vs. IPS vs. TN:** Automatically identifies self-emitting OLED/AMOLED panels vs. wide-angle IPS vs. budget TN displays.
+- **Touchscreen Sensor:** Verifies presence of capacitive or active digitizer touchscreen controllers.
+- **Screen Studio:** 16-step grayscale contrast ramp, 1px subpixel checkerboard test, and a live UFO motion blur animation that measures exact browser compositor refresh rates (Hz) and frame times.
 
-### 3. Visual Health Gauges & Agreement Matrix
-- **Radial Battery Ring:** Visual gauge of current full-charge capacity vs. design capacity with health percentage and cycle count.
-- **Storage Endurance Bar:** Visual representation of NVMe percentage used, spare threshold, and media errors.
-- **Claim Comparison Matrix:** Side-by-side reconciliation of seller listing claims vs. physical hardware, flagging matches, iGPU VRAM reservation tolerances, and discrepancies.
+### 3. 🖱️ Trackpad Weakpoints & Keyboard Switch Chatter Detection
+- **9-Zone Sensitivity Matrix:** Real-time 3x3 tracking grid (Top-Left, Center, Bottom-Right, etc.) showing hit counts across the trackpad to identify dead spots, unresponsive edges, or sticky click corners.
+- **Pointer Pressure API:** Scales contact radius and displays real-time pointer pressure (0%–100%) on force-sensitive touchpads.
+- **Switch Chatter & Bounce Detection:** Monitors key press intervals down to millisecond precision; flags contact bounce (<35ms) and switch wobble to identify physically worn or failing key switches.
+- **Condition Heatmap:** Color-codes every key switch on the laptop keyboard (Cold, Warm, Verified, Chatter Alert).
 
-### 4. Expanded Interactive Hardware Testing Suite
-- **🖥️ Dead & Stuck Pixel Screen Tester:** Fullscreen pure color cycling (Monochrome, RGB, Yellow, Magenta, Cyan) to spot dead subpixels, pressure marks, and backlight bleed.
-- **🔊 Audio Frequency & Speaker Rattle Tester:** Web Audio API sine oscillator (20Hz–8000Hz), 5-second linear frequency sweep, and Left/Right channel isolation to identify blown speaker cones and chassis rattle.
-- **📷 Webcam & Microphone Diagnostic:** Real-time camera preview paired with live microphone decibel (dB) metering and voice activity detection.
-- **🖱️ Trackpad & Gesture Canvas:** Multi-touch pointer tracking, gesture recognition, and 2-finger scroll test canvas.
-- **⌨️ Keyboard Matrix Tester:** Interactive virtual keyboard illuminating every registered physical key switch.
+### 4. 🌀 ACPI Fan Acoustics & Performance vs. Whisper Mode
+- **ACPI Platform Cooling Profiles:** Toggle vendor firmware profiles directly from the dashboard:
+  - `🚀 Performance Mode`: Spins fans to maximum speed and raises thermal limits to test peak cooling and airflow.
+  - `🤫 Whisper Mode`: Keeps fans in silent low-RPM operation to verify bearing noise and quiet dissipation.
+  - `⚖️ Balanced Mode`: Restores standard factory thermal policy.
+- **Live Fan RPM Monitor:** Non-destructive read-only hwmon sysfs monitoring displaying current fan rotation speeds in real time.
+- **5-Second Bounded Thermal Pulse:** Non-destructive math calculation measuring starting idle temp, peak temp, rise delta, and ramp velocity (°C/s).
 
-### 5. Local Offline Database & Session History
-- Persistent SQLite storage (`~/.local/share/laptop-buyer-kit/inspections.sqlite3`).
-- Tracks historical inspections, claims, findings, and per-test coverage states.
-- One-click export to standalone local HTML reports, JSON snapshots, or print-ready PDF views.
+### 5. 🔌 Physical Ports & Connectors Hardware Station
+- **Live USB Verification:** Plug a USB drive or peripheral into any chassis port to immediately see speed classification (USB 2.0 480M, USB 3.0 5G, USB 3.2 10G) and removable flag.
+- **External Video Connectors:** Validates HDMI and DisplayPort output interfaces and modes.
+- **AC Charging Port:** Real-time confirmation of AC power delivery and battery charge status.
+
+### 6. 💽 USB Bootable & Portable Mode (Windows + Linux)
+- Includes `autorun.inf`, `start-aegis.bat`, and `start-aegis.manifest` for plug-and-play USB operation.
+- Requests standard UAC administrator elevation so Aegis can access SMART registers and ACPI telemetry without false-positive virus flags (clean open-source script, zero obfuscation, zero telemetry).
 
 ---
 
